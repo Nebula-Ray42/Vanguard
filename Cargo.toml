@@ -1,0 +1,10 @@
+[workspace]
+
+members = [
+    "crates/core",
+    "crates/render_api",
+    "crates/renderer",
+    "crates/runner"
+]
+
+resolver = "2"

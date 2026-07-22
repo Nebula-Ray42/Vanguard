@@ -1,0 +1,16 @@
+# --- Editor / OS ---
+.vscode/
+.idea/
+.zed/
+.DS_Store
+Thumbs.db
+
+# --- Rust ---
+/target/
+**/target/
+ Cargo.lock
+
+# --- Python ---  
+python/*.egg-info/
+python/dist/
+python/build/
