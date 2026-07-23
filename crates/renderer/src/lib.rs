@@ -11,7 +11,7 @@ use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use buffer::copy_buffer;
 use context::VulkanContext;
 use mesh::{VERTICES, Vertex};
-use nalgebra::{Matrix4, Point3, Vector3};
+use nalgebra::{Matrix4};
 use pipeline::GraphicsPipeline;
 use render_api::RenderSnapshot;
 use swapchain::SwapchainTarget;
@@ -187,20 +187,13 @@ impl VulkanRenderer {
             // ========================================================
 
             // 1. 画面のアスペクト比を取得
-            let aspect = self.swapchain_target.extent.width as f32
-                / self.swapchain_target.extent.height as f32;
+            let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
+            let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 100.0);
 
-            // 2. カメラ行列（View）と投影行列（Projection）を nalgebra で計算
-            // （※将来的にはこれもDTOとして外部から渡すようにすると更に疎結合になります）
-            let projection =
-                Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 100.0);
-
-            // カメラを (0, 3, 5) の位置に置き、原点 (0, 0, 0) を見つめさせる
-            let view = Matrix4::look_at_rh(
-                &Point3::new(0.0, 3.0, 5.0),
-                &Point3::new(0.0, 0.0, 0.0),
-                &Vector3::y(),
-            );
+            let mut vulkan_clip = Matrix4::identity();
+            vulkan_clip[(1, 1)] = -1.0;
+            vulkan_clip[(2, 2)] = 0.5;
+            vulkan_clip[(2, 3)] = 0.5;
 
             // VulkanはY軸が下向き、Zクリップが0〜1なので、nalgebra(OpenGL基準)の行列を補正する
             let mut vulkan_clip = Matrix4::identity();
@@ -209,7 +202,7 @@ impl VulkanRenderer {
             vulkan_clip[(2, 3)] = 0.5; // Z軸平行移動
 
             // 全てのオブジェクトに共通する ViewProjection 行列
-            let view_proj = vulkan_clip * projection * view;
+            let view_proj = vulkan_clip * projection * snapshot.view_matrix;
 
             // 3. DTO（RenderSnapshot）のインスタンスをループで描画！
             for instance in &snapshot.instances {
@@ -285,7 +278,7 @@ impl Drop for VulkanRenderer {
 
             self.context.device.destroy_buffer(self.vertex_buffer, None);
             self.context.device.free_memory(self.vertex_buffer_memory, None);
-            
+
             self.sync.destroy(&self.context.device);
             self.pipeline.destroy(&self.context.device);
             self.swapchain_target.destroy(&self.context.device);

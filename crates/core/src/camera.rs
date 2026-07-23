@@ -1,57 +1,61 @@
-// ==========================================
-// 1. カメラのデータ構造（Entity/VO）を定義する
-// ==========================================
-// カメラは「自分の位置(eye)」「見ているターゲット(target)」「上方向(up)」の3つの情報（ベクトル）を持つ。
-// これらは状態なので変更可能(mut)にする。
+// crates/core/src/camera.rs
+use crate::input::InputState;
+use nalgebra::{Matrix4, Point3, Vector3};
 
-// ==========================================
-// 2. カメラデータから「描画用の行列」を計算する純粋関数を作る
-// ==========================================
-// Rendererはカメラの細かい概念（位置やターゲット）を知る必要はない。
-// 最終的に必要なのは「ビュープロジェクション行列」と呼ばれる [f32; 16] の生データだけ。
-// nalgebra（またはglam）を使って計算し、生の配列を返すメソッドを作る。
-
-// ==========================================
-// 3. GameState にカメラの状態を持たせる
-// ==========================================
-// ゲームの世界に1つ（または複数）のカメラを配置するため、
-// GameStateの構造体の中にカメラのフィールドを追加する。
-
-// ==========================================
-// 4. メインループからスナップショットへ渡す
-// ==========================================
-// 毎フレーム、GameStateからカメラの [f32; 16] を抽出し、
-// RenderSnapshot（描画用の純粋なデータ箱）に詰め込んでRendererに渡す。
-
-use glam::Vec3;
-
+#[derive(Debug, Clone)]
 pub struct Camera {
-    pub eye: Vec3,
-    pub target: Vec3,
-    pub up: Vec3,
-    pub aspect_ratio: f32,
+    pub position: Point3<f32>, // 現在地
+    pub pitch: f32,            // 上下の首振り角度 (ラジアン)
+    pub yaw: f32,              // 左右の首振り角度 (ラジアン)
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32) -> Self {
+    pub fn new() -> Self {
         Self {
-            eye: Vec3::new(0.0, 5.0, 10.0), // 少し上から斜め下を見下ろす位置
-            target: Vec3::new(0.0, 0.0, 0.0), // 原点を見る
-            up: Vec3::Y, // Y軸が上
-            aspect_ratio,
+            position: Point3::new(0.0, 3.0, 5.0),
+            yaw: -std::f32::consts::FRAC_PI_2, // -90度 (初期状態で原点を向く)
+            pitch: -0.5,                       // 少し下を向く
         }
     }
 
-    pub fn build_view_projection_matrix(&self) -> [f32; 16] {
-        // 1. ビュー行列（カメラの位置と向き）
-        let view = glam::camera::rh::view::look_at_mat4(self.eye, self.target, self.up);
+    /// 入力状態と経過時間(dt)を受け取り、自身の状態を更新する（純粋な関数的アプローチ）
+    pub fn update(&mut self, input: &InputState, delta_time: f32) {
+        // --- 1. 視点移動 (マウス) ---
+        let mouse_sensitivity = 0.005;
+        self.yaw -= input.mouse_dx * mouse_sensitivity;
+        self.pitch -= input.mouse_dy * mouse_sensitivity;
 
-        // 2. プロジェクション行列（遠近法・視野角）
-        // 視野角45度(PI/4)、ニアクリップ0.1、ファークリップ100.0
-        let proj = glam::camera::rh::proj::opengl::perspective(std::f32::consts::FRAC_PI_4, self.aspect_ratio, 0.1, 100.0);
+        // ジンバルロック対策: 真上・真下を向くと計算が破綻するため、±89度付近で制限する
+        let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
+        self.pitch = self.pitch.clamp(-max_pitch, max_pitch);
 
-        // 3. 掛け合わせてRenderer用の生配列に変換
-        let view_proj = proj * view;
-        view_proj.to_cols_array()
+        // --- 2. 向きベクトルの計算 ---
+        // PitchとYawから、カメラが現在向いている方向(フロントベクトル)を計算
+        let front = Vector3::new(
+            self.yaw.cos() * self.pitch.cos(),
+            self.pitch.sin(),
+            self.yaw.sin() * self.pitch.cos(),
+        ).normalize();
+
+        // フロントベクトルと「真上」のベクトルから、カメラの右方向(ライトベクトル)を計算
+        let right = front.cross(&Vector3::y()).normalize();
+
+        // --- 3. 移動処理 (キーボード) ---
+        let speed = 5.0 * delta_time;
+        if input.move_forward { self.position += front * speed; }
+        if input.move_backward { self.position -= front * speed; }
+        if input.move_right { self.position += right * speed; }
+        if input.move_left { self.position -= right * speed; }
+    }
+
+    /// レンダラーに渡すための View行列 を生成する
+    pub fn get_view_matrix(&self) -> Matrix4<f32> {
+        let front = Vector3::new(
+            self.yaw.cos() * self.pitch.cos(),
+            self.pitch.sin(),
+            self.yaw.sin() * self.pitch.cos(),
+        ).normalize();
+
+        Matrix4::look_at_rh(&self.position, &(self.position + front), &Vector3::y())
     }
 }

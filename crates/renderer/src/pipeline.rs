@@ -67,7 +67,8 @@ impl GraphicsPipeline {
         let rasterization = vk::PipelineRasterizationStateCreateInfo::default()
             .polygon_mode(vk::PolygonMode::FILL)
             .line_width(1.0)
-            .cull_mode(vk::CullModeFlags::BACK)
+            //TODO BACK から NONE に変更して、両面を描画させる
+            .cull_mode(vk::CullModeFlags::NONE)
             .front_face(vk::FrontFace::CLOCKWISE);
 
         let multisample = vk::PipelineMultisampleStateCreateInfo::default()

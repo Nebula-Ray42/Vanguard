@@ -1,4 +1,3 @@
-use nalgebra::Matrix4;
 use render_api::{EntityId, MeshId, RenderInstance, RenderRegistry, RenderSnapshot};
 use renderer::VulkanRenderer;
 use std::thread;
@@ -12,6 +11,7 @@ use winit::{
 
 use core::physics::PhysicsWorld;
 use core::state::GameState;
+use core::input::InputState;
 
 // ==========================================
 // 1. 初期化関数の抽出 (変更なし)
@@ -40,24 +40,39 @@ fn setup_engine() -> (EventLoop<()>, Window, VulkanRenderer) {
 /// GameStateのSoA配列から、レンダラー用のスナップショットを生成する
 fn build_render_snapshot(game_state: &GameState, registry: &RenderRegistry) -> RenderSnapshot {
     let mut snapshot = RenderSnapshot {
-        camera_matrix: game_state.camera.build_view_projection_matrix(),
+        view_matrix: game_state.camera.get_view_matrix(),
         instances: Vec::new(),
     };
 
-    // 暫定として EntityId(1) を使用していますが、将来は DynamicId との紐付けを行います
-    let entity_id = EntityId(1);
+    // ドメイン層から「描画すべきエンティティ」のリストを全てもらう
+    let entities = game_state.get_renderable_entities();
 
-    if let Some(mesh_id) = registry.get_mesh_for(&entity_id) {
-        // GameState内のすべての動的エンティティの行列をイテレート
-        for raw_matrix_array in game_state.dynamic_transforms.values() {
-            let model_matrix = Matrix4::from_column_slice(raw_matrix_array);
-            snapshot.instances.push(RenderInstance {
-                mesh_id,
-                transform: model_matrix,
-            });
-        }
+    for entity in entities {
+
+        let render_entity_id = EntityId(entity.id.0);
+
+        let Some(mesh_id) = registry.get_mesh_for(&render_entity_id) else {
+            continue;
+        };
+
+        // TODO 追加: 行列の 12, 13, 14 番目の要素が、それぞれ X, Y, Z の座標（平行移動）を表します
+        let x = entity.transform[12];
+        let y = entity.transform[13];
+        let z = entity.transform[14];
+        println!("オブジェクトの現在座標: X:{:.2}, Y:{:.2}, Z:{:.2}", x, y, z);
+
+        snapshot.instances.push(RenderInstance {
+            mesh_id,
+            transform: entity.transform,
+        });
+
+        snapshot.instances.push(RenderInstance {
+            mesh_id,
+            transform: entity.transform,
+        });
     }
 
+    println!("描画するインスタンス数: {}", snapshot.instances.len());
     snapshot
 }
 
@@ -74,6 +89,8 @@ fn main() {
     let mut game_state = GameState::new();
     let mut registry = RenderRegistry::new();
 
+    registry.register_entity(EntityId(1), MeshId(1));
+
     // --- エンティティの初期化パイプライン ---
     // 1. 物理ワールドにキューブを生成 (高さ10.0から落下)
     let raw_cube_handle = physics.spawn_dynamic_cube(10.0);
@@ -84,6 +101,8 @@ fn main() {
 
     let target_frame_duration = Duration::from_secs_f64(1.0 / 60.0);
     let mut last_frame_time = Instant::now();
+
+    let mut input_state = InputState::default();
 
     event_loop.set_control_flow(ControlFlow::Poll);
 
@@ -108,6 +127,14 @@ fn main() {
                 }
 
                 // ==========================================
+                //  追加2: マウス入力フェーズ (DeviceEvent)
+                // ==========================================
+                Event::DeviceEvent { event: winit::event::DeviceEvent::MouseMotion { delta }, .. } => {
+                    input_state.mouse_dx += delta.0 as f32;
+                    input_state.mouse_dy += delta.1 as f32;
+                }
+
+                // ==========================================
                 // 物理・状態更新フェーズ
                 // ==========================================
                 Event::AboutToWait => {
@@ -122,11 +149,25 @@ fn main() {
                         // ② 物理の結果をGameStateの行列配列 ([f32; 16]) に同期する
                         game_state.sync_transforms(&physics);
 
+                        let dt = elapsed.as_secs_f32();
+
+                        // (将来的にここで game_state.update_camera(&input_state, elapsed) を呼ぶ)
+
+                        // 次のフレームのためにマウス移動量をリセット
+                        input_state.reset_relative_state();
+
+                        physics.step();
+                        game_state.sync_transforms(&physics);
+
+                        game_state.camera.update(&input_state, dt);
+                        input_state.reset_relative_state();
+
                         window.request_redraw();
                     } else {
                         thread::sleep(target_frame_duration - elapsed);
                     }
                 }
+
 
                 // ==========================================
                 // 描画フェーズ
@@ -134,12 +175,28 @@ fn main() {
                 Event::WindowEvent { event: WindowEvent::RedrawRequested, .. } => {
                     let snapshot = build_render_snapshot(&game_state, &registry);
 
-                    // 🟢 ここが重要！
-                    // renderer がまだ存在している場合（破棄されていない場合）のみ描画する。
-                    // as_mut() を使うことで、中身を「一時的に借用」してメソッドを呼べる。
                     if let Some(r) = renderer_opt.as_mut() {
                         if let Err(e) = r.draw_frame(&snapshot) {
                             println!("描画中にエラーが発生しました: {}", e);
+                        }
+                    }
+                }
+
+                // ==========================================
+                // 追加3: キーボード入力フェーズ (WindowEvent)
+                // ==========================================
+                Event::WindowEvent { event: WindowEvent::KeyboardInput { event: key_event, .. }, .. } => {
+                    let is_pressed = key_event.state == winit::event::ElementState::Pressed;
+
+                    if let winit::keyboard::PhysicalKey::Code(keycode) = key_event.physical_key {
+                        use winit::keyboard::KeyCode;
+                        match keycode {
+                            KeyCode::KeyW => input_state.move_forward = is_pressed,
+                            KeyCode::KeyS => input_state.move_backward = is_pressed,
+                            KeyCode::KeyA => input_state.move_left = is_pressed,
+                            KeyCode::KeyD => input_state.move_right = is_pressed,
+                            KeyCode::Escape => elwt.exit(), // オマケ: ESCキーで終了
+                            _ => {}
                         }
                     }
                 }

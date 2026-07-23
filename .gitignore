@@ -14,3 +14,6 @@ Cargo.lock
 python/*.egg-info/
 python/dist/
 python/build/
+
+# --- Personal Settings ---
+Functional-Implementation-Specifications-and-Processing-Flow

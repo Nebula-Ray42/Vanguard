@@ -72,6 +72,12 @@ impl PhysicsWorld {
             &mut self.rigid_body_set,
         );
 
+        let floor_collider = ColliderBuilder::cuboid(50.0, 0.1, 50.0)
+            .translation(vector![0.0, -2.0, 0.0].into())
+            .build();
+
+        self.collider_set.insert(floor_collider);
+
         handle
     }
 
