@@ -32,23 +32,16 @@ impl VulkanContext {
             .engine_version(vk::make_api_version(0, 1, 0, 0))
             .api_version(vk::API_VERSION_1_3);
 
-        let mut instance_extensions = ash_window::enumerate_required_extensions(display_handle)
+        let instance_extensions = ash_window::enumerate_required_extensions(display_handle)
             .map_err(|e| format!("ウィンドウ拡張機能の取得に失敗しました: {}", e))?
             .to_vec();
 
-        instance_extensions.push(c"VK_EXT_validation_features".as_ptr());
-
         let layer_names = [c"VK_LAYER_KHRONOS_validation".as_ptr()];
-
-        let enables = [vk::ValidationFeatureEnableEXT::GPU_ASSISTED];
-        let mut validation_features =
-            vk::ValidationFeaturesEXT::default().enabled_validation_features(&enables);
 
         let create_info = vk::InstanceCreateInfo::default()
             .application_info(&app_info)
             .enabled_extension_names(&instance_extensions)
-            .enabled_layer_names(&layer_names)
-            .push_next(&mut validation_features);
+            .enabled_layer_names(&layer_names);
 
         let instance = unsafe {
             entry
@@ -188,12 +181,21 @@ impl VulkanContext {
 
         Ok((buffer, buffer_memory))
     }
+}
 
-    pub unsafe fn destroy(&self) {
+impl Drop for VulkanContext {
+    fn drop(&mut self) {
         unsafe {
+            // 破棄する前にGPUの作業完了を待つ
+            if let Err(e) = self.device.device_wait_idle() {
+                println!("デバイスの待機中にエラーが発生しました: {}", e);
+            }
+
             self.device.destroy_device(None);
             self.surface_loader.destroy_surface(self.surface, None);
             self.instance.destroy_instance(None);
+
+            println!("VulkanContext destroyed cleanly.");
         }
     }
 }

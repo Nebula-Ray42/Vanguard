@@ -1,5 +1,5 @@
 mod buffer;
-mod context;
+pub mod context;
 mod mesh;
 mod pipeline;
 mod swapchain;
@@ -124,7 +124,6 @@ impl VulkanRenderer {
             self.sync.destroy(&self.context.device);
             self.pipeline.destroy(&self.context.device);
             self.swapchain_target.destroy(&self.context.device);
-            self.context.destroy();
         }
     }
 

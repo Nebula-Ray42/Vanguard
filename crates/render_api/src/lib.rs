@@ -27,6 +27,7 @@ pub struct RenderInstance {
 #[derive(Debug, Clone)]
 pub struct RenderSnapshot {
     pub instances: Vec<RenderInstance>,
+    pub camera_matrix: [f32; 16],
 }
 
 // ==========================================
