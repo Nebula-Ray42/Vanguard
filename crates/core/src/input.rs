@@ -1,5 +1,4 @@
-
-
+#[derive(Debug, Default, Clone, Copy)]
 pub struct InputState {
     // 移動 (WASDなど)
     pub move_forward: bool,
@@ -10,4 +9,11 @@ pub struct InputState {
     // 視点移動 (マウスの相対移動量)
     pub mouse_dx: f32,
     pub mouse_dy: f32,
+}
+
+impl InputState {
+    pub fn reset_relative_state(&mut self) {
+        self.mouse_dx = 0.0;
+        self.mouse_dy = 0.0;
+    }
 }
