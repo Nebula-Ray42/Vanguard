@@ -1,0 +1,14 @@
+#!/bin/sh
+# コミット前に自動でフォーマットとコンパイルチェックを実行する
+
+echo "Running cargo fmt..."
+cargo fmt --all
+
+echo "Running cargo check..."
+cargo check --workspace
+
+# checkが失敗した場合はコミットを中止する
+if [ $? -ne 0 ]; then
+    echo "Error: cargo check failed. Commit aborted."
+    exit 1
+fi
