@@ -296,7 +296,6 @@ dependencies = [
  "glam 0.33.2",
  "nalgebra 0.33.3",
  "rapier3d",
- "render_api",
  "slotmap",
 ]
 
@@ -1242,7 +1241,6 @@ version = "0.1.0"
 dependencies = [
  "core",
  "nalgebra 0.33.3",
- "rapier3d",
  "raw-window-handle",
  "render_api",
  "renderer",
