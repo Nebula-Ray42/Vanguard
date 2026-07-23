@@ -11,7 +11,7 @@ impl Vertex {
     pub fn binding_description() -> vk::VertexInputBindingDescription {
         vk::VertexInputBindingDescription::default()
             .binding(0)
-            .stride(std::mem::size_of::<Vertex>() as u32)
+            .stride(size_of::<Vertex>() as u32)
             .input_rate(vk::VertexInputRate::VERTEX)
     }
 
@@ -26,7 +26,7 @@ impl Vertex {
                 .binding(0)
                 .location(1)
                 .format(vk::Format::R32G32B32_SFLOAT)
-                .offset(std::mem::size_of::<[f32; 3]>() as u32),
+                .offset(size_of::<[f32; 3]>() as u32),
         ]
     }
 }

@@ -66,7 +66,7 @@ impl VulkanRenderer {
         let sync = SyncContext::new(&context.device, queue_family_index, image_count)?;
 
         // Staging Buffer 転送処理
-        let buffer_size = std::mem::size_of_val(&VERTICES) as vk::DeviceSize;
+        let buffer_size = size_of_val(&VERTICES) as vk::DeviceSize;
         let (staging_buffer, staging_memory) = context.create_buffer(
             buffer_size,
             vk::BufferUsageFlags::TRANSFER_SRC,
@@ -234,7 +234,7 @@ impl VulkanRenderer {
                 let mvp_slice = mvp.as_slice();
                 let bytes = std::slice::from_raw_parts(
                     mvp_slice.as_ptr() as *const u8,
-                    std::mem::size_of_val(mvp_slice),
+                    size_of_val(mvp_slice),
                 );
 
                 device.cmd_push_constants(
