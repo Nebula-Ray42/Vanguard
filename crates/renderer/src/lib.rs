@@ -114,19 +114,6 @@ impl VulkanRenderer {
         })
     }
 
-    pub fn destroy(&self) {
-        unsafe {
-            self.context.device.device_wait_idle().unwrap();
-            self.context.device.destroy_buffer(self.vertex_buffer, None);
-            self.context
-                .device
-                .free_memory(self.vertex_buffer_memory, None);
-            self.sync.destroy(&self.context.device);
-            self.pipeline.destroy(&self.context.device);
-            self.swapchain_target.destroy(&self.context.device);
-        }
-    }
-
     pub fn draw_frame(&self, snapshot: &RenderSnapshot) -> Result<(), String> {
         let device = &self.context.device;
         let frame = self.sync.current_frame.get();
@@ -288,5 +275,22 @@ impl VulkanRenderer {
                 .set((frame + 1) % sync::MAX_FRAMES_IN_FLIGHT);
         }
         Ok(())
+    }
+}
+
+impl Drop for VulkanRenderer {
+    fn drop(&mut self) {
+        unsafe {
+            self.context.device.device_wait_idle().unwrap();
+
+            self.context.device.destroy_buffer(self.vertex_buffer, None);
+            self.context.device.free_memory(self.vertex_buffer_memory, None);
+            
+            self.sync.destroy(&self.context.device);
+            self.pipeline.destroy(&self.context.device);
+            self.swapchain_target.destroy(&self.context.device);
+
+            println!("VulkanRenderer child objects destroyed cleanly.");
+        }
     }
 }
