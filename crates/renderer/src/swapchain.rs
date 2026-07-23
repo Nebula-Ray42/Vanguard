@@ -1,7 +1,9 @@
+// crates/renderer/src/swapchain.rs
 use crate::context::VulkanContext;
 use ash::khr::swapchain::Device as SwapchainLoader;
 use ash::{Device, vk};
 
+#[allow(dead_code)]
 pub struct SwapchainTarget {
     pub loader: SwapchainLoader,
     pub swapchain: vk::SwapchainKHR,
@@ -9,6 +11,10 @@ pub struct SwapchainTarget {
     pub extent: vk::Extent2D,
     pub images: Vec<vk::Image>,
     pub image_views: Vec<vk::ImageView>,
+    pub depth_format: vk::Format,
+    pub depth_image: vk::Image,
+    pub depth_image_memory: vk::DeviceMemory,
+    pub depth_image_view: vk::ImageView,
     pub render_pass: vk::RenderPass,
     pub framebuffers: Vec<vk::Framebuffer>,
 }
@@ -17,23 +23,76 @@ impl SwapchainTarget {
     pub fn new(context: &VulkanContext, width: u32, height: u32) -> Result<Self, String> {
         let loader = SwapchainLoader::new(&context.instance, &context.device);
 
+        // 1. Swapchain本体の生成
+        let (swapchain, format, extent) = Self::create_swapchain(context, &loader, width, height)?;
+
+        // 2. 画像とImageViewの取得
+        let images = unsafe {
+            loader
+                .get_swapchain_images(swapchain)
+                .map_err(|e| format!("Swapchain画像取得失敗: {}", e))?
+        };
+        let image_views = Self::create_swapchain_image_views(context, format, &images)?;
+
+        // 3. Depth Bufferの生成
+        let (depth_format, depth_image, depth_image_memory, depth_image_view) =
+            Self::create_depth_resources(context, extent)?;
+
+        // 4. RenderPassの生成
+        let render_pass = Self::create_render_pass(context, format, depth_format)?;
+
+        // 5. Framebufferの生成
+        let framebuffers = Self::create_framebuffers(
+            context,
+            render_pass,
+            extent,
+            &image_views,
+            depth_image_view,
+        )?;
+
+        Ok(Self {
+            loader,
+            swapchain,
+            format,
+            extent,
+            images,
+            image_views,
+            depth_format,
+            depth_image,
+            depth_image_memory,
+            depth_image_view,
+            render_pass,
+            framebuffers,
+        })
+    }
+
+    // =========================================================================
+    // ヘルパー関数群（モジュール内部からのみ呼び出し可能）
+    // =========================================================================
+
+    fn create_swapchain(
+        context: &VulkanContext,
+        loader: &SwapchainLoader,
+        width: u32,
+        height: u32,
+    ) -> Result<(vk::SwapchainKHR, vk::Format, vk::Extent2D), String> {
         let capabilities = unsafe {
             context
                 .surface_loader
                 .get_physical_device_surface_capabilities(context.physical_device, context.surface)
-                .map_err(|e| format!("Surface能力の取得に失敗しました: {}", e))?
+                .map_err(|e| format!("Surface能力の取得に失敗: {}", e))?
         };
         let formats = unsafe {
             context
                 .surface_loader
                 .get_physical_device_surface_formats(context.physical_device, context.surface)
-                .map_err(|e| format!("Surfaceフォーマットの取得に失敗しました: {}", e))?
+                .unwrap_or_default()
         };
         let present_modes = unsafe {
             context
                 .surface_loader
                 .get_physical_device_surface_present_modes(context.physical_device, context.surface)
-                .map_err(|e| format!("プレゼンテーションモードの取得に失敗しました: {}", e))?
+                .unwrap_or_default()
         };
 
         let format = formats
@@ -87,28 +146,25 @@ impl SwapchainTarget {
         let swapchain = unsafe {
             loader
                 .create_swapchain(&create_info, None)
-                .map_err(|e| format!("Swapchainの生成に失敗しました: {}", e))?
+                .map_err(|e| format!("Swapchain生成失敗: {}", e))?
         };
 
-        let images = unsafe {
-            loader
-                .get_swapchain_images(swapchain)
-                .map_err(|e| format!("Swapchain画像の取得に失敗しました: {}", e))?
-        };
+        Ok((swapchain, format.format, extent))
+    }
 
-        let image_views = images
+    fn create_swapchain_image_views(
+        context: &VulkanContext,
+        format: vk::Format,
+        images: &[vk::Image],
+    ) -> Result<Vec<vk::ImageView>, String> {
+        images
             .iter()
             .map(|&image| {
                 let view_info = vk::ImageViewCreateInfo::default()
                     .image(image)
                     .view_type(vk::ImageViewType::TYPE_2D)
-                    .format(format.format)
-                    .components(vk::ComponentMapping {
-                        r: vk::ComponentSwizzle::IDENTITY,
-                        g: vk::ComponentSwizzle::IDENTITY,
-                        b: vk::ComponentSwizzle::IDENTITY,
-                        a: vk::ComponentSwizzle::IDENTITY,
-                    })
+                    .format(format)
+                    .components(vk::ComponentMapping::default())
                     .subresource_range(vk::ImageSubresourceRange {
                         aspect_mask: vk::ImageAspectFlags::COLOR,
                         base_mip_level: 0,
@@ -123,11 +179,105 @@ impl SwapchainTarget {
                         .map_err(|e| format!("ImageView生成失敗: {}", e))
                 }
             })
-            .collect::<Result<Vec<_>, String>>()?;
+            .collect()
+    }
 
-        // RenderPassの構築
+    fn create_depth_resources(
+        context: &VulkanContext,
+        extent: vk::Extent2D,
+    ) -> Result<(vk::Format, vk::Image, vk::DeviceMemory, vk::ImageView), String> {
+        let depth_format = vk::Format::D32_SFLOAT;
+
+        // Depth画像のメモリ確保
+        let image_info = vk::ImageCreateInfo::default()
+            .image_type(vk::ImageType::TYPE_2D)
+            .extent(vk::Extent3D {
+                width: extent.width,
+                height: extent.height,
+                depth: 1,
+            })
+            .mip_levels(1)
+            .array_layers(1)
+            .format(depth_format)
+            .tiling(vk::ImageTiling::OPTIMAL)
+            .initial_layout(vk::ImageLayout::UNDEFINED)
+            .usage(vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT)
+            .samples(vk::SampleCountFlags::TYPE_1)
+            .sharing_mode(vk::SharingMode::EXCLUSIVE);
+
+        let depth_image = unsafe {
+            context
+                .device
+                .create_image(&image_info, None)
+                .map_err(|e| e.to_string())?
+        };
+
+        let mem_reqs = unsafe { context.device.get_image_memory_requirements(depth_image) };
+        let mem_props = unsafe {
+            context
+                .instance
+                .get_physical_device_memory_properties(context.physical_device)
+        };
+
+        let mem_type_index = VulkanContext::find_memory_type(
+            &mem_props,
+            mem_reqs.memory_type_bits,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL,
+        )?;
+
+        let alloc_info = vk::MemoryAllocateInfo::default()
+            .allocation_size(mem_reqs.size)
+            .memory_type_index(mem_type_index);
+
+        let depth_image_memory = unsafe {
+            context
+                .device
+                .allocate_memory(&alloc_info, None)
+                .map_err(|e| e.to_string())?
+        };
+
+        unsafe {
+            context
+                .device
+                .bind_image_memory(depth_image, depth_image_memory, 0)
+                .map_err(|e| e.to_string())?
+        };
+
+        // Depth画像のViewを作成
+        let view_info = vk::ImageViewCreateInfo::default()
+            .image(depth_image)
+            .view_type(vk::ImageViewType::TYPE_2D)
+            .format(depth_format)
+            .subresource_range(vk::ImageSubresourceRange {
+                aspect_mask: vk::ImageAspectFlags::DEPTH,
+                base_mip_level: 0,
+                level_count: 1,
+                base_array_layer: 0,
+                layer_count: 1,
+            });
+
+        let depth_image_view = unsafe {
+            context
+                .device
+                .create_image_view(&view_info, None)
+                .map_err(|e| e.to_string())?
+        };
+
+        Ok((
+            depth_format,
+            depth_image,
+            depth_image_memory,
+            depth_image_view,
+        ))
+    }
+
+    fn create_render_pass(
+        context: &VulkanContext,
+        color_format: vk::Format,
+        depth_format: vk::Format,
+    ) -> Result<vk::RenderPass, String> {
         let color_attachment = vk::AttachmentDescription::default()
-            .format(format.format)
+            .format(color_format)
             .samples(vk::SampleCountFlags::TYPE_1)
             .load_op(vk::AttachmentLoadOp::CLEAR)
             .store_op(vk::AttachmentStoreOp::STORE)
@@ -136,24 +286,47 @@ impl SwapchainTarget {
             .initial_layout(vk::ImageLayout::UNDEFINED)
             .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
 
+        let depth_attachment = vk::AttachmentDescription::default()
+            .format(depth_format)
+            .samples(vk::SampleCountFlags::TYPE_1)
+            .load_op(vk::AttachmentLoadOp::CLEAR)
+            .store_op(vk::AttachmentStoreOp::DONT_CARE)
+            .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+            .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+            .initial_layout(vk::ImageLayout::UNDEFINED)
+            .final_layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
         let color_attachment_ref = vk::AttachmentReference::default()
             .attachment(0)
             .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
 
-        let color_refs = [color_attachment_ref];
+        let depth_attachment_ref = vk::AttachmentReference::default()
+            .attachment(1)
+            .layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
         let subpass = vk::SubpassDescription::default()
             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
-            .color_attachments(&color_refs);
+            .color_attachments(std::slice::from_ref(&color_attachment_ref))
+            .depth_stencil_attachment(&depth_attachment_ref);
 
         let dependency = vk::SubpassDependency::default()
             .src_subpass(vk::SUBPASS_EXTERNAL)
             .dst_subpass(0)
-            .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+            .src_stage_mask(
+                vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT
+                    | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
+            )
             .src_access_mask(vk::AccessFlags::empty())
-            .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
-            .dst_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
+            .dst_stage_mask(
+                vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT
+                    | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
+            )
+            .dst_access_mask(
+                vk::AccessFlags::COLOR_ATTACHMENT_WRITE
+                    | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE,
+            );
 
-        let attachments = [color_attachment];
+        let attachments = [color_attachment, depth_attachment];
         let subpasses = [subpass];
         let dependencies = [dependency];
 
@@ -162,20 +335,28 @@ impl SwapchainTarget {
             .subpasses(&subpasses)
             .dependencies(&dependencies);
 
-        let render_pass = unsafe {
+        unsafe {
             context
                 .device
                 .create_render_pass(&render_pass_info, None)
-                .map_err(|e| format!("RenderPass生成失敗: {}", e))?
-        };
+                .map_err(|e| e.to_string())
+        }
+    }
 
-        let framebuffers = image_views
+    fn create_framebuffers(
+        context: &VulkanContext,
+        render_pass: vk::RenderPass,
+        extent: vk::Extent2D,
+        image_views: &[vk::ImageView],
+        depth_image_view: vk::ImageView,
+    ) -> Result<Vec<vk::Framebuffer>, String> {
+        image_views
             .iter()
             .map(|&view| {
-                let fb_attachments = [view];
+                let attachments = [view, depth_image_view];
                 let fb_info = vk::FramebufferCreateInfo::default()
                     .render_pass(render_pass)
-                    .attachments(&fb_attachments)
+                    .attachments(&attachments)
                     .width(extent.width)
                     .height(extent.height)
                     .layers(1);
@@ -183,21 +364,10 @@ impl SwapchainTarget {
                     context
                         .device
                         .create_framebuffer(&fb_info, None)
-                        .map_err(|e| format!("Framebuffer生成失敗: {}", e))
+                        .map_err(|e| e.to_string())
                 }
             })
-            .collect::<Result<Vec<_>, String>>()?;
-
-        Ok(Self {
-            loader,
-            swapchain,
-            format: format.format,
-            extent,
-            images,
-            image_views,
-            render_pass,
-            framebuffers,
-        })
+            .collect()
     }
 
     pub unsafe fn destroy(&self, device: &Device) {
@@ -209,6 +379,9 @@ impl SwapchainTarget {
             for &iv in &self.image_views {
                 device.destroy_image_view(iv, None);
             }
+            device.destroy_image_view(self.depth_image_view, None);
+            device.destroy_image(self.depth_image, None);
+            device.free_memory(self.depth_image_memory, None);
             self.loader.destroy_swapchain(self.swapchain, None);
         }
     }

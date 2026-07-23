@@ -4,6 +4,7 @@ use ash::{Device, Entry, Instance, vk};
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::ffi::CString;
 
+#[allow(dead_code)]
 pub struct VulkanContext {
     pub entry: Entry,
     pub instance: Instance,
@@ -31,12 +32,23 @@ impl VulkanContext {
             .engine_version(vk::make_api_version(0, 1, 0, 0))
             .api_version(vk::API_VERSION_1_3);
 
-        let surface_extensions = ash_window::enumerate_required_extensions(display_handle)
-            .map_err(|e| format!("ウィンドウ拡張機能の取得に失敗しました: {}", e))?;
+        let mut instance_extensions = ash_window::enumerate_required_extensions(display_handle)
+            .map_err(|e| format!("ウィンドウ拡張機能の取得に失敗しました: {}", e))?
+            .to_vec();
+
+        instance_extensions.push(c"VK_EXT_validation_features".as_ptr());
+
+        let layer_names = [c"VK_LAYER_KHRONOS_validation".as_ptr()];
+
+        let enables = [vk::ValidationFeatureEnableEXT::GPU_ASSISTED];
+        let mut validation_features =
+            vk::ValidationFeaturesEXT::default().enabled_validation_features(&enables);
 
         let create_info = vk::InstanceCreateInfo::default()
             .application_info(&app_info)
-            .enabled_extension_names(surface_extensions);
+            .enabled_extension_names(&instance_extensions)
+            .enabled_layer_names(&layer_names)
+            .push_next(&mut validation_features);
 
         let instance = unsafe {
             entry
@@ -109,6 +121,72 @@ impl VulkanContext {
             device,
             graphics_queue,
         })
+    }
+
+    pub fn find_memory_type(
+        memory_properties: &vk::PhysicalDeviceMemoryProperties,
+        type_filter: u32,
+        properties: vk::MemoryPropertyFlags,
+    ) -> Result<u32, String> {
+        for i in 0..memory_properties.memory_type_count {
+            let is_type_suitable = (type_filter & (1 << i)) != 0;
+            let actual_properties = memory_properties.memory_types[i as usize].property_flags;
+            let has_required_properties = actual_properties.contains(properties);
+
+            if is_type_suitable && has_required_properties {
+                return Ok(i);
+            }
+        }
+        Err("条件に適合するメモリタイプが見つかりませんでした".to_string())
+    }
+
+    // ★ 追加したバッファ生成関数 (implブロックの中に正しく配置)
+    pub fn create_buffer(
+        &self,
+        size: vk::DeviceSize,
+        usage: vk::BufferUsageFlags,
+        properties: vk::MemoryPropertyFlags,
+    ) -> Result<(vk::Buffer, vk::DeviceMemory), String> {
+        let buffer_info = vk::BufferCreateInfo::default()
+            .size(size)
+            .usage(usage)
+            .sharing_mode(vk::SharingMode::EXCLUSIVE);
+
+        let buffer = unsafe {
+            self.device
+                .create_buffer(&buffer_info, None)
+                .map_err(|e| format!("バッファの生成に失敗しました: {}", e))?
+        };
+
+        let mem_requirements = unsafe { self.device.get_buffer_memory_requirements(buffer) };
+        let mem_properties = unsafe {
+            self.instance
+                .get_physical_device_memory_properties(self.physical_device)
+        };
+
+        let memory_type_index = Self::find_memory_type(
+            &mem_properties,
+            mem_requirements.memory_type_bits,
+            properties,
+        )?;
+
+        let alloc_info = vk::MemoryAllocateInfo::default()
+            .allocation_size(mem_requirements.size)
+            .memory_type_index(memory_type_index);
+
+        let buffer_memory = unsafe {
+            self.device
+                .allocate_memory(&alloc_info, None)
+                .map_err(|e| format!("バッファ用メモリの確保に失敗しました: {}", e))?
+        };
+
+        unsafe {
+            self.device
+                .bind_buffer_memory(buffer, buffer_memory, 0)
+                .map_err(|e| format!("バッファとメモリのバインドに失敗しました: {}", e))?;
+        }
+
+        Ok((buffer, buffer_memory))
     }
 
     pub unsafe fn destroy(&self) {

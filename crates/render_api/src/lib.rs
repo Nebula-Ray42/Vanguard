@@ -1,31 +1,63 @@
 // crates/render_api/src/lib.rs
+use nalgebra::Matrix4;
+use std::collections::HashMap;
 
-/// 3D空間の座標を示す純粋なデータ
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
+// ==========================================
+// 1. Value Objects (ID群)
+// ==========================================
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct EntityId(pub u32);
 
-/// 1つのオブジェクトを描画するための命令（データ指向）
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct MeshId(pub u32);
+
+// ==========================================
+// 2. DTO (描画用データ構造)
+// ==========================================
+
+/// 1つのメッシュを描画するための情報
 #[derive(Debug, Clone)]
-pub struct RenderCommand {
-    pub mesh_id: u32,   // どの3Dモデルを描画するか（今は仮で数値）
-    pub position: Vec3, // どこに描画するか
+pub struct RenderInstance {
+    pub mesh_id: MeshId,
+    /// どこに、どの向きで、どの大きさで描画するか（Model行列）
+    pub transform: Matrix4<f32>,
 }
 
-/// 1フレーム分の描画命令のリスト
-/// Coreがこれを出力し、Rendererがこれを受け取る
+/// 1フレーム分の描画指示をすべて詰め込んだスナップショット（完全なイミュータブルDTO）
 #[derive(Debug, Clone)]
-pub struct RenderCommandList {
-    pub commands: Vec<RenderCommand>,
+pub struct RenderSnapshot {
+    pub instances: Vec<RenderInstance>,
 }
 
-impl RenderCommandList {
+// ==========================================
+// 3. IDマッピング層
+// ==========================================
+
+/// Core側のエンティティIDと、Renderer側のメッシュ/リソースIDを紐付ける辞書
+#[derive(Debug, Default)]
+pub struct RenderRegistry {
+    entity_to_mesh: HashMap<EntityId, MeshId>,
+}
+
+impl RenderRegistry {
     pub fn new() -> Self {
         Self {
-            commands: Vec::new(),
+            entity_to_mesh: HashMap::new(),
         }
+    }
+
+    /// エンティティと描画するメッシュを紐付ける
+    pub fn register_entity(&mut self, entity: EntityId, mesh: MeshId) {
+        self.entity_to_mesh.insert(entity, mesh);
+    }
+
+    /// エンティティの紐付けを解除する
+    pub fn unregister_entity(&mut self, entity: &EntityId) {
+        self.entity_to_mesh.remove(entity);
+    }
+
+    /// エンティティIDから、対応するメッシュIDを取得する
+    pub fn get_mesh_for(&self, entity: &EntityId) -> Option<MeshId> {
+        self.entity_to_mesh.get(entity).copied()
     }
 }

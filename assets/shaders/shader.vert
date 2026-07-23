@@ -1,26 +1,18 @@
 #version 450
 
-layout(location = 0) out vec3 out_color;
+// CPUから送られてくる3Dの頂点データ
+layout(location = 0) in vec3 inPosition; // vec2 から vec3 に変更！
+layout(location = 1) in vec3 inColor;
 
-// 【追加】CPUから高速に送られてくる少量のデータを受け取るブロック
+layout(location = 0) out vec3 fragColor;
+
+// MVP行列（Model・View・Projectionを掛け合わせた4x4行列）を受け取る
 layout(push_constant) uniform PushConstants {
-    vec2 offset; // X方向とY方向のズレ（f32 x 2）
-} push_constants;
-
-vec2 POSITIONS[3] = vec2[](
-    vec2(0.0, -0.5),
-    vec2(0.5, 0.5),
-    vec2(-0.5, 0.5)
-);
-
-vec3 COLORS[3] = vec3[](
-    vec3(1.0, 0.0, 0.0),
-    vec3(0.0, 1.0, 0.0),
-    vec3(0.0, 0.0, 1.0)
-);
+    mat4 mvp;
+} push;
 
 void main() {
-    // 【変更】元の頂点座標に、CPUから送られてきたオフセット（ズレ）を足し込む
-    gl_Position = vec4(POSITIONS[gl_VertexIndex] + push_constants.offset, 0.0, 1.0);
-    out_color = COLORS[gl_VertexIndex];
+    // 頂点に行列を掛けて、3D空間から画面上の2D座標へ変換する
+    gl_Position = push.mvp * vec4(inPosition, 1.0);
+    fragColor = inColor;
 }

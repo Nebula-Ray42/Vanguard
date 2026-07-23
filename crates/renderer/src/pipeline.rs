@@ -1,3 +1,4 @@
+use crate::mesh::Vertex;
 use ash::{Device, vk};
 use std::ffi::CString;
 
@@ -37,7 +38,13 @@ impl GraphicsPipeline {
                 .name(&main_name),
         ];
 
-        let vertex_input = vk::PipelineVertexInputStateCreateInfo::default();
+        let binding_desc = [Vertex::binding_description()];
+        let attrib_desc = Vertex::attribute_descriptions();
+
+        let vertex_input = vk::PipelineVertexInputStateCreateInfo::default()
+            .vertex_binding_descriptions(&binding_desc)
+            .vertex_attribute_descriptions(&attrib_desc);
+
         let input_assembly = vk::PipelineInputAssemblyStateCreateInfo::default()
             .topology(vk::PrimitiveTopology::TRIANGLE_LIST);
 
@@ -66,6 +73,20 @@ impl GraphicsPipeline {
         let multisample = vk::PipelineMultisampleStateCreateInfo::default()
             .rasterization_samples(vk::SampleCountFlags::TYPE_1);
 
+        let depth_stencil_state = vk::PipelineDepthStencilStateCreateInfo::default()
+            .depth_test_enable(true)
+            .depth_write_enable(true)
+            .depth_compare_op(vk::CompareOp::LESS)
+            .depth_bounds_test_enable(false)
+            .stencil_test_enable(false);
+
+        let depth_stencil = vk::PipelineDepthStencilStateCreateInfo::default()
+            .depth_test_enable(true)
+            .depth_write_enable(true)
+            .depth_compare_op(vk::CompareOp::LESS)
+            .depth_bounds_test_enable(false)
+            .stencil_test_enable(false);
+
         let blend_attachments = [vk::PipelineColorBlendAttachmentState::default()
             .color_write_mask(
                 vk::ColorComponentFlags::R
@@ -79,11 +100,10 @@ impl GraphicsPipeline {
         let push_constant_ranges = [vk::PushConstantRange::default()
             .stage_flags(vk::ShaderStageFlags::VERTEX)
             .offset(0)
-            .size(std::mem::size_of::<[f32; 2]>() as u32)];
+            .size(std::mem::size_of::<[f32; 16]>() as u32)];
 
         let layout_info =
             vk::PipelineLayoutCreateInfo::default().push_constant_ranges(&push_constant_ranges);
-
         let layout = unsafe {
             device
                 .create_pipeline_layout(&layout_info, None)
@@ -97,6 +117,8 @@ impl GraphicsPipeline {
             .viewport_state(&viewport_state)
             .rasterization_state(&rasterization)
             .multisample_state(&multisample)
+            .depth_stencil_state(&depth_stencil_state)
+            .depth_stencil_state(&depth_stencil)
             .color_blend_state(&blend_state)
             .layout(layout)
             .render_pass(render_pass)
@@ -112,7 +134,6 @@ impl GraphicsPipeline {
             device.destroy_shader_module(vert_module, None);
             device.destroy_shader_module(frag_module, None);
         }
-
         Ok(Self { layout, pipeline })
     }
 

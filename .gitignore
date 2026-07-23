@@ -8,7 +8,7 @@ Thumbs.db
 # --- Rust ---
 /target/
 **/target/
- Cargo.lock
+Cargo.lock
 
 # --- Python ---  
 python/*.egg-info/
