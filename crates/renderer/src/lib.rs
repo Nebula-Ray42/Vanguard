@@ -221,8 +221,7 @@ impl VulkanRenderer {
                     0,
                     bytes,
                 );
-
-                // ▼▼▼ ここが新しい描画命令 ▼▼▼
+                
                 // IDから対象のGPUメッシュを取得
                 let mesh_index = instance.mesh_id.0 as usize;
                 if let Some(gpu_mesh) = self.meshes.get(mesh_index) {

@@ -61,7 +61,7 @@ impl PhysicsWorld {
 impl PhysicsWorld {
     pub fn spawn_dynamic_cube(&mut self, start_y: f32) -> RigidBodyHandle {
         let rigid_body = RigidBodyBuilder::dynamic()
-            .translation(vector![0.0, start_y, 0.0].into())
+            .translation(vector![0.0, start_y, -5.0].into())
             .build();
         let handle = self.rigid_body_set.insert(rigid_body);
 
