@@ -1,4 +1,4 @@
-mod buffer;
+pub mod buffer;
 pub mod context;
 mod mesh;
 mod pipeline;
@@ -8,9 +8,10 @@ pub mod command;
 
 use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
+use std::mem::{align_of, size_of, size_of_val};
 
 use buffer::copy_buffer;
-use context::VulkanContext;
+use context::{VulkanContext, GpuBuffer};
 use nalgebra::Matrix4;
 use pipeline::GraphicsPipeline;
 use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
@@ -18,8 +19,7 @@ use swapchain::SwapchainTarget;
 use sync::SyncContext;
 use command::CommandRecorder;
 
-use tracing::{info};
-use crate::context::GpuBuffer;
+use tracing::info;
 
 /// GPUに転送済みのメッシュデータ
 pub struct GpuMesh {
@@ -34,6 +34,13 @@ pub struct VulkanRenderer {
     pipeline: GraphicsPipeline,
     sync: SyncContext,
     pub meshes: Vec<GpuMesh>,
+}
+
+/// 描画中のフレーム状態を保持するトークン (Layer 4)
+pub struct ActiveFrame<'a> {
+    pub recorder: CommandRecorder<'a>,
+    pub image_index: u32,
+    pub frame_index: usize,
 }
 
 impl VulkanRenderer {
@@ -88,7 +95,6 @@ impl VulkanRenderer {
         // --- 1. 頂点バッファの作成と転送 ---
         let vertex_size = (data.vertices.len() * size_of::<Vertex>()) as vk::DeviceSize;
 
-        // タプルではなく GpuBuffer として受け取る
         let v_staging = self.context.create_buffer(
             vertex_size,
             vk::BufferUsageFlags::TRANSFER_SRC,
@@ -96,7 +102,6 @@ impl VulkanRenderer {
         )?;
 
         unsafe {
-            // v_staging.memory でアクセス
             let data_ptr = self.context.device.map_memory(v_staging.memory, 0, vertex_size, vk::MemoryMapFlags::empty()).unwrap();
             let mut align = ash::util::Align::new(data_ptr, align_of::<Vertex>() as u64, vertex_size);
             align.copy_from_slice(&data.vertices);
@@ -109,7 +114,6 @@ impl VulkanRenderer {
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
 
-        // .buffer で生ハンドルを渡す
         copy_buffer(&self.context, self.sync.command_pool, v_staging.buffer, vertex_buffer.buffer, vertex_size);
 
         // --- 2. インデックスバッファの作成と転送 ---
@@ -147,39 +151,18 @@ impl VulkanRenderer {
         Ok(mesh_id)
     }
 
+    /// ========================================================
+    /// メイン描画ループ
+    /// ========================================================
     pub fn draw_frame(&self, snapshot: &RenderSnapshot) -> Result<(), String> {
-        let device = &self.context.device;
-        let frame = self.sync.current_frame.get();
-
-
-        // ========================================================
-        // 1. 同期・準備フェーズ (Vulkanの生APIに触れるためunsafe)
-        // ========================================================
-        let (image_index, command_buffer) = unsafe {
-            device.wait_for_fences(&[self.sync.in_flight_fences[frame]], true, std::u64::MAX).unwrap();
-            device.reset_fences(&[self.sync.in_flight_fences[frame]]).unwrap();
-
-            let (image_index, _) = self.swapchain_target.loader.acquire_next_image(
-                self.swapchain_target.swapchain,
-                std::u64::MAX,
-                self.sync.image_available_semaphores[frame],
-                vk::Fence::null(),
-            ).unwrap();
-
-            let command_buffer = self.sync.command_buffers[frame];
-            device.reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty()).unwrap();
-
-            let begin_info = vk::CommandBufferBeginInfo::default();
-            device.begin_command_buffer(command_buffer, &begin_info).unwrap();
-
-            (image_index, command_buffer)
+        // 1. フレームの開始（同期処理の隠蔽）
+        let active_frame = match self.begin_frame() {
+            Some(frame) => frame,
+            None => return Ok(()), // リサイズ時などは描画をスキップ
         };
 
-
-        // ========================================================
-        // 2. コマンド記録フェーズ
-        // ========================================================
-        let recorder = CommandRecorder::new(&self.context.device, command_buffer);
+        // 2. コマンド記録フェーズ（完全に安全なラッパー群）
+        let recorder = &active_frame.recorder;
 
         let clear_values = [
             vk::ClearValue { color: vk::ClearColorValue { float32: [0.3, 0.5, 0.8, 1.0] } },
@@ -188,14 +171,14 @@ impl VulkanRenderer {
 
         let render_pass_begin = vk::RenderPassBeginInfo::default()
             .render_pass(self.swapchain_target.render_pass)
-            .framebuffer(self.swapchain_target.framebuffers[image_index as usize])
+            .framebuffer(self.swapchain_target.framebuffers[active_frame.image_index as usize])
             .render_area(vk::Rect2D { offset: vk::Offset2D { x: 0, y: 0 }, extent: self.swapchain_target.extent })
             .clear_values(&clear_values);
 
         recorder.begin_render_pass(&render_pass_begin);
         recorder.bind_pipeline(self.pipeline.pipeline);
 
-        // カメラ行列の計算 (変更なし)
+        // カメラ行列の計算
         let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
         let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 100.0);
         let mut vulkan_clip = Matrix4::identity();
@@ -223,17 +206,63 @@ impl VulkanRenderer {
 
         recorder.end_render_pass();
 
+        // 3. フレームの終了（送信処理の隠蔽）
+        self.end_frame(active_frame);
 
-        // ========================================================
-        // 3. 送信・画面表示フェーズ (Vulkanの生APIに触れるためunsafe)
-        // ========================================================
+        Ok(())
+    }
+
+    /// ========================================================
+    /// フレームの開始（コールドパス）
+    /// ========================================================
+    pub fn begin_frame(&self) -> Option<ActiveFrame<'_>> {
+        let frame = self.sync.current_frame.get();
+
         unsafe {
-            device.end_command_buffer(command_buffer).unwrap();
+            self.context.device.wait_for_fences(&[self.sync.in_flight_fences[frame]], true, std::u64::MAX).unwrap();
 
-            let wait_semaphores = [self.sync.image_available_semaphores[frame]];
+            let acquire_result = self.swapchain_target.loader.acquire_next_image(
+                self.swapchain_target.swapchain,
+                std::u64::MAX,
+                self.sync.image_available_semaphores[frame],
+                vk::Fence::null(),
+            );
+
+            let image_index = match acquire_result {
+                Ok((index, _)) => index,
+                Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => return None,
+                Err(e) => panic!("画像の取得に失敗しました: {:?}", e),
+            };
+
+            self.context.device.reset_fences(&[self.sync.in_flight_fences[frame]]).unwrap();
+
+            let command_buffer = self.sync.command_buffers[frame];
+            self.context.device.reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty()).unwrap();
+
+            let begin_info = vk::CommandBufferBeginInfo::default();
+            self.context.device.begin_command_buffer(command_buffer, &begin_info).unwrap();
+
+            let recorder = CommandRecorder::new(&self.context.device, command_buffer);
+
+            Some(ActiveFrame {
+                recorder,
+                image_index,
+                frame_index: frame,
+            })
+        }
+    }
+
+    /// ========================================================
+    /// フレームの終了と送信（コールドパス）
+    /// ========================================================
+    pub fn end_frame(&self, active_frame: ActiveFrame) {
+        unsafe {
+            self.context.device.end_command_buffer(active_frame.recorder.command_buffer).unwrap();
+
+            let wait_semaphores = [self.sync.image_available_semaphores[active_frame.frame_index]];
             let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
-            let command_buffers_submit = [command_buffer];
-            let signal_semaphores = [self.sync.render_finished_semaphores[image_index as usize]];
+            let command_buffers_submit = [active_frame.recorder.command_buffer];
+            let signal_semaphores = [self.sync.render_finished_semaphores[active_frame.image_index as usize]];
 
             let submit_info = vk::SubmitInfo::default()
                 .wait_semaphores(&wait_semaphores)
@@ -241,19 +270,23 @@ impl VulkanRenderer {
                 .command_buffers(&command_buffers_submit)
                 .signal_semaphores(&signal_semaphores);
 
-            device.queue_submit(self.context.graphics_queue, &[submit_info], self.sync.in_flight_fences[frame]).unwrap();
+            self.context.device.queue_submit(
+                self.context.graphics_queue,
+                &[submit_info],
+                self.sync.in_flight_fences[active_frame.frame_index]
+            ).unwrap();
 
             let swapchains = [self.swapchain_target.swapchain];
-            let image_indices = [image_index];
+            let image_indices = [active_frame.image_index];
             let present_info = vk::PresentInfoKHR::default()
                 .wait_semaphores(&signal_semaphores)
                 .swapchains(&swapchains)
                 .image_indices(&image_indices);
 
-            self.swapchain_target.loader.queue_present(self.context.graphics_queue, &present_info).unwrap();
-            self.sync.current_frame.set((frame + 1) % sync::MAX_FRAMES_IN_FLIGHT)
+            let _ = self.swapchain_target.loader.queue_present(self.context.graphics_queue, &present_info);
+
+            self.sync.current_frame.set((active_frame.frame_index + 1) % sync::MAX_FRAMES_IN_FLIGHT);
         }
-        Ok(())
     }
 }
 
@@ -261,7 +294,7 @@ impl Drop for VulkanRenderer {
     fn drop(&mut self) {
         unsafe {
             self.context.device.device_wait_idle().unwrap();
-            self.meshes.clear();
+            self.meshes.clear(); // ここで RAII によって GpuBuffer の Drop が呼ばれる
 
             self.sync.destroy(&self.context.device);
             self.pipeline.destroy(&self.context.device);
