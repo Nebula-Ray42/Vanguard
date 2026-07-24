@@ -5,6 +5,8 @@ pub struct InputState {
     pub move_backward: bool,
     pub move_left: bool,
     pub move_right: bool,
+    pub move_up: bool,
+    pub move_down: bool,
 
     // 視点移動 (マウスの相対移動量)
     pub mouse_dx: f32,

@@ -147,6 +147,8 @@ fn main() {
                             KeyCode::KeyS => input_state.move_backward = is_pressed,
                             KeyCode::KeyA => input_state.move_left = is_pressed,
                             KeyCode::KeyD => input_state.move_right = is_pressed,
+                            KeyCode::Space => input_state.move_up = is_pressed,
+                            KeyCode::ShiftLeft => input_state.move_down = is_pressed,
                             KeyCode::Escape => elwt.exit(),
                             _ => {}
                         }

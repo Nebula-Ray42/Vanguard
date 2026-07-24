@@ -20,13 +20,14 @@ impl Camera {
 
     /// 入力状態と経過時間(dt)を受け取り、自身の状態を更新する（純粋な関数的アプローチ）
     pub fn update(&mut self, input: &InputState, delta_time: f32) {
-        // --- 1. 視点移動 (マウス) ---
-        let mouse_sensitivity = 0.005;
-        self.yaw -= input.mouse_dx * mouse_sensitivity;
-        self.pitch -= input.mouse_dy * mouse_sensitivity;
+        // マウス感度（環境に合わせて 0.001 〜 0.005 あたりで微調整）
+        let sensitivity = 0.002;
 
-        // ジンバルロック対策: 真上・真下を向くと計算が破綻するため、±89度付近で制限する
-        let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
+        self.yaw += input.mouse_dx * sensitivity;
+        self.pitch += input.mouse_dy * sensitivity;
+
+        // ピッチ（上下）の制限（真上や真下を向いた時に画面がひっくり返るのを防ぐ）
+        let max_pitch = 89.0_f32.to_radians();
         self.pitch = self.pitch.clamp(-max_pitch, max_pitch);
 
         // --- 2. 向きベクトルの計算 ---
@@ -46,6 +47,8 @@ impl Camera {
         if input.move_backward { self.position -= front * speed; }
         if input.move_right { self.position += right * speed; }
         if input.move_left { self.position -= right * speed; }
+        if input.move_up { self.position.y += speed; }
+        if input.move_down { self.position.y -= speed; }
     }
 
     /// レンダラーに渡すための View行列 を生成する
