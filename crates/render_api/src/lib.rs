@@ -19,7 +19,6 @@ pub struct MeshId(pub u32);
 #[derive(Debug, Clone)]
 pub struct RenderInstance {
     pub mesh_id: MeshId,
-    /// どこに、どの向きで、どの大きさで描画するか（Model行列）
     pub transform: Matrix4<f32>,
 }
 
@@ -29,7 +28,7 @@ pub struct RenderInstance {
 pub struct Vertex {
     pub position: [f32; 3],
     pub color: [f32; 3],
-    // TODO 将来的に法線(normal)やUVなどもここに追加するだけ
+    // TODO 将来的に法線(normal)やUVなどもここに追加する
 }
 
 // メッシュ全体を表す純粋なデータ
@@ -39,7 +38,7 @@ pub struct MeshData {
     pub indices: Vec<u32>,
 }
 
-/// 1フレーム分の描画指示をすべて詰め込んだスナップショット（完全なイミュータブルDTO）
+/// 1フレーム分の描画指示をすべて詰め込んだスナップショット
 #[derive(Debug, Clone)]
 pub struct RenderSnapshot {
     pub instances: Vec<RenderInstance>,

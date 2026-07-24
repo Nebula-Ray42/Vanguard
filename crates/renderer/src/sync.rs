@@ -5,7 +5,7 @@ pub const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
 pub struct SyncContext {
     pub image_available_semaphores: Vec<vk::Semaphore>,
-    pub render_finished_semaphores: Vec<vk::Semaphore>, // ★ 画像の数だけ用意する
+    pub render_finished_semaphores: Vec<vk::Semaphore>,
     pub in_flight_fences: Vec<vk::Fence>,
     pub command_pool: vk::CommandPool,
     pub command_buffers: Vec<vk::CommandBuffer>,
@@ -30,7 +30,6 @@ impl SyncContext {
         }
 
         let mut render_finished_semaphores = vec![];
-        // ★ OS側の画像数（Macだと通常3枚）に合わせて描画完了セマフォを作る
         for _ in 0..image_count {
             unsafe {
                 render_finished_semaphores

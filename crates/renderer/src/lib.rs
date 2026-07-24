@@ -17,13 +17,12 @@ use swapchain::SwapchainTarget;
 use sync::SyncContext;
 
 use tracing::{info};
+use crate::context::GpuBuffer;
 
 /// GPUに転送済みのメッシュデータ（Vulkanの物理的なリソース）
 pub struct GpuMesh {
-    pub vertex_buffer: vk::Buffer,
-    pub vertex_buffer_memory: vk::DeviceMemory,
-    pub index_buffer: vk::Buffer,
-    pub index_buffer_memory: vk::DeviceMemory,
+    pub vertex_buffer: GpuBuffer,
+    pub index_buffer: GpuBuffer,
     pub index_count: u32,
 }
 
@@ -75,7 +74,6 @@ impl VulkanRenderer {
         let image_count = swapchain_target.images.len() as u32;
         let sync = SyncContext::new(&context.device, queue_family_index, image_count)?;
 
-        // 初期化時は空のリストを持たせるだけ！（ボイラープレートの大掃除完了）
         Ok(Self {
             context,
             swapchain_target,
@@ -85,71 +83,63 @@ impl VulkanRenderer {
         })
     }
 
-    /// 純粋なMeshDataを受け取り、VulkanのGPUバッファを生成してMeshIdを返す万能関数
     pub fn create_mesh_from_data(&mut self, data: &MeshData) -> Result<MeshId, String> {
         // --- 1. 頂点バッファの作成と転送 ---
         let vertex_size = (data.vertices.len() * size_of::<Vertex>()) as vk::DeviceSize;
-        let (v_staging_buf, v_staging_mem) = self.context.create_buffer(
+
+        // タプルではなく GpuBuffer として受け取る
+        let v_staging = self.context.create_buffer(
             vertex_size,
             vk::BufferUsageFlags::TRANSFER_SRC,
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
         )?;
 
         unsafe {
-            let data_ptr = self.context.device.map_memory(v_staging_mem, 0, vertex_size, vk::MemoryMapFlags::empty()).unwrap();
+            // v_staging.memory でアクセス
+            let data_ptr = self.context.device.map_memory(v_staging.memory, 0, vertex_size, vk::MemoryMapFlags::empty()).unwrap();
             let mut align = ash::util::Align::new(data_ptr, align_of::<Vertex>() as u64, vertex_size);
             align.copy_from_slice(&data.vertices);
-            self.context.device.unmap_memory(v_staging_mem);
+            self.context.device.unmap_memory(v_staging.memory);
         }
 
-        let (vertex_buffer, vertex_buffer_memory) = self.context.create_buffer(
+        let vertex_buffer = self.context.create_buffer(
             vertex_size,
             vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::VERTEX_BUFFER,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
 
-        copy_buffer(&self.context, self.sync.command_pool, v_staging_buf, vertex_buffer, vertex_size);
-
-        unsafe {
-            self.context.device.destroy_buffer(v_staging_buf, None);
-            self.context.device.free_memory(v_staging_mem, None);
-        }
+        // .buffer で生ハンドルを渡す
+        copy_buffer(&self.context, self.sync.command_pool, v_staging.buffer, vertex_buffer.buffer, vertex_size);
 
         // --- 2. インデックスバッファの作成と転送 ---
         let index_size = (data.indices.len() * size_of::<u32>()) as vk::DeviceSize;
-        let (i_staging_buf, i_staging_mem) = self.context.create_buffer(
+
+        let i_staging = self.context.create_buffer(
             index_size,
             vk::BufferUsageFlags::TRANSFER_SRC,
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
         )?;
 
         unsafe {
-            let data_ptr = self.context.device.map_memory(i_staging_mem, 0, index_size, vk::MemoryMapFlags::empty()).unwrap();
+            let data_ptr = self.context.device.map_memory(i_staging.memory, 0, index_size, vk::MemoryMapFlags::empty()).unwrap();
             let mut align = ash::util::Align::new(data_ptr, align_of::<u32>() as u64, index_size);
             align.copy_from_slice(&data.indices);
-            self.context.device.unmap_memory(i_staging_mem);
+            self.context.device.unmap_memory(i_staging.memory);
         }
 
-        let (index_buffer, index_buffer_memory) = self.context.create_buffer(
+        let index_buffer = self.context.create_buffer(
             index_size,
             vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
 
-        copy_buffer(&self.context, self.sync.command_pool, i_staging_buf, index_buffer, index_size);
-
-        unsafe {
-            self.context.device.destroy_buffer(i_staging_buf, None);
-            self.context.device.free_memory(i_staging_mem, None);
-        }
+        copy_buffer(&self.context, self.sync.command_pool, i_staging.buffer, index_buffer.buffer, index_size);
 
         // --- 3. メッシュを登録してIDを返す ---
         let mesh_id = MeshId(self.meshes.len() as u32);
         self.meshes.push(GpuMesh {
-            vertex_buffer,
-            vertex_buffer_memory,
-            index_buffer,
-            index_buffer_memory,
+            vertex_buffer, // GpuBuffer をそのまま渡す
+            index_buffer,  // GpuBuffer をそのまま渡す
             index_count: data.indices.len() as u32,
         });
 
@@ -192,7 +182,7 @@ impl VulkanRenderer {
             device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::GRAPHICS, self.pipeline.pipeline);
 
             // ========================================================
-            // カメラ行列の計算 (重複を削除してスッキリ)
+            // カメラ行列の計算
             // ========================================================
             let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
             let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 100.0);
@@ -204,7 +194,6 @@ impl VulkanRenderer {
 
             let view_proj = vulkan_clip * projection * snapshot.view_matrix;
 
-            // 3. DTO（RenderSnapshot）のインスタンスをループで描画！
             for instance in &snapshot.instances {
                 let mvp = view_proj * instance.transform;
 
@@ -221,18 +210,17 @@ impl VulkanRenderer {
                     0,
                     bytes,
                 );
-                
+
                 // IDから対象のGPUメッシュを取得
                 let mesh_index = instance.mesh_id.0 as usize;
                 if let Some(gpu_mesh) = self.meshes.get(mesh_index) {
 
                     // 1. その図形の頂点データをセット
-                    device.cmd_bind_vertex_buffers(command_buffer, 0, &[gpu_mesh.vertex_buffer], &[0]);
+                    device.cmd_bind_vertex_buffers(command_buffer, 0, &[gpu_mesh.vertex_buffer.buffer], &[0]);
 
                     // 2. その図形のインデックスデータ（頂点を繋ぐ順番）をセット
-                    device.cmd_bind_index_buffer(command_buffer, gpu_mesh.index_buffer, 0, vk::IndexType::UINT32);
+                    device.cmd_bind_index_buffer(command_buffer, gpu_mesh.index_buffer.buffer, 0, vk::IndexType::UINT32);
 
-                    // 3. cmd_draw ではなく、インデックスを使う cmd_draw_indexed で描画！
                     device.cmd_draw_indexed(command_buffer, gpu_mesh.index_count, 1, 0, 0, 0);
                 }
             }
@@ -265,36 +253,12 @@ impl VulkanRenderer {
         }
         Ok(())
     }
-
-    pub unsafe fn destroy(&mut self) {
-        let device = &self.context.device;
-
-        // unsafe fn の中でも、さらに unsafe { ... } ブロックで囲むのが最新のモダンな書き方です
-        unsafe {
-            for mesh in &self.meshes {
-                device.destroy_buffer(mesh.vertex_buffer, None);
-                device.free_memory(mesh.vertex_buffer_memory, None);
-                device.destroy_buffer(mesh.index_buffer, None);
-                device.free_memory(mesh.index_buffer_memory, None);
-            }
-            self.meshes.clear();
-
-            self.pipeline.destroy(device);
-        }
-    }
 }
 
 impl Drop for VulkanRenderer {
     fn drop(&mut self) {
         unsafe {
             self.context.device.device_wait_idle().unwrap();
-
-            for mesh in &self.meshes {
-                self.context.device.destroy_buffer(mesh.vertex_buffer, None);
-                self.context.device.free_memory(mesh.vertex_buffer_memory, None);
-                self.context.device.destroy_buffer(mesh.index_buffer, None);
-                self.context.device.free_memory(mesh.index_buffer_memory, None);
-            }
             self.meshes.clear();
 
             self.sync.destroy(&self.context.device);

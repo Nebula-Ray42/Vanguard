@@ -9,7 +9,7 @@ pub struct PhysicsWorld {
     integration_parameters: IntegrationParameters,
     physics_pipeline: PhysicsPipeline,
     island_manager: IslandManager,
-    broad_phase: BroadPhaseBvh, // BroadPhaseBvh に変更
+    broad_phase: BroadPhaseBvh,
     narrow_phase: NarrowPhase,
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
@@ -18,16 +18,15 @@ pub struct PhysicsWorld {
 }
 
 impl PhysicsWorld {
-    /// 常に妥当な初期状態で物理世界を構築する（Always-Valid）
     pub fn new() -> Self {
         Self {
             rigid_body_set: RigidBodySet::new(),
             collider_set: ColliderSet::new(),
-            gravity: vector![0.0, -9.81, 0.0].into(), // 下向きの重力
+            gravity: vector![0.0, -9.81, 0.0].into(),
             integration_parameters: IntegrationParameters::default(),
             physics_pipeline: PhysicsPipeline::new(),
             island_manager: IslandManager::new(),
-            broad_phase: BroadPhaseBvh::new(), // BroadPhaseBvh に変更
+            broad_phase: BroadPhaseBvh::new(),
             narrow_phase: NarrowPhase::new(),
             impulse_joint_set: ImpulseJointSet::new(),
             multibody_joint_set: MultibodyJointSet::new(),

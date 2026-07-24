@@ -3,6 +3,7 @@ use ash::khr::surface::Instance as SurfaceLoader;
 use ash::{Device, Entry, Instance, vk};
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::ffi::CString;
+use std::sync::Arc;
 
 #[allow(dead_code)]
 pub struct VulkanContext {
@@ -11,7 +12,7 @@ pub struct VulkanContext {
     pub surface: vk::SurfaceKHR,
     pub surface_loader: SurfaceLoader,
     pub physical_device: vk::PhysicalDevice,
-    pub device: Device,
+    pub device: Arc<Device>,
     pub graphics_queue: vk::Queue,
 }
 
@@ -111,7 +112,7 @@ impl VulkanContext {
             surface,
             surface_loader,
             physical_device,
-            device,
+            device: Arc::new(device),
             graphics_queue,
         })
     }
@@ -133,13 +134,12 @@ impl VulkanContext {
         Err("条件に適合するメモリタイプが見つかりませんでした".to_string())
     }
 
-    // ★ 追加したバッファ生成関数 (implブロックの中に正しく配置)
     pub fn create_buffer(
         &self,
         size: vk::DeviceSize,
         usage: vk::BufferUsageFlags,
         properties: vk::MemoryPropertyFlags,
-    ) -> Result<(vk::Buffer, vk::DeviceMemory), String> {
+    ) -> Result<GpuBuffer, String> {
         let buffer_info = vk::BufferCreateInfo::default()
             .size(size)
             .usage(usage)
@@ -179,23 +179,27 @@ impl VulkanContext {
                 .map_err(|e| format!("バッファとメモリのバインドに失敗しました: {}", e))?;
         }
 
-        Ok((buffer, buffer_memory))
+        Ok(GpuBuffer {
+            buffer,
+            memory: buffer_memory,
+            size,
+            device: Arc::clone(&self.device),
+        })
     }
 }
 
-impl Drop for VulkanContext {
+pub struct GpuBuffer {
+    pub buffer: vk::Buffer,
+    pub memory: vk::DeviceMemory,
+    pub size: vk::DeviceSize,
+    device: Arc<Device>,
+}
+
+impl Drop for GpuBuffer {
     fn drop(&mut self) {
         unsafe {
-            // 破棄する前にGPUの作業完了を待つ
-            if let Err(e) = self.device.device_wait_idle() {
-                println!("デバイスの待機中にエラーが発生しました: {}", e);
-            }
-
-            self.device.destroy_device(None);
-            self.surface_loader.destroy_surface(self.surface, None);
-            self.instance.destroy_instance(None);
-
-            println!("VulkanContext destroyed cleanly.");
+            self.device.destroy_buffer(self.buffer, None);
+            self.device.free_memory(self.memory, None);
         }
     }
 }
