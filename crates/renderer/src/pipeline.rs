@@ -1,6 +1,6 @@
-use crate::mesh::Vertex;
 use ash::{Device, vk};
 use std::ffi::CString;
+use crate::mesh::{get_vertex_attribute_descriptions, get_vertex_binding_description};
 
 pub struct GraphicsPipeline {
     pub layout: vk::PipelineLayout,
@@ -38,8 +38,8 @@ impl GraphicsPipeline {
                 .name(&main_name),
         ];
 
-        let binding_desc = [Vertex::binding_description()];
-        let attrib_desc = Vertex::attribute_descriptions();
+        let binding_desc = [get_vertex_binding_description()];
+        let attrib_desc = get_vertex_attribute_descriptions();
 
         let vertex_input = vk::PipelineVertexInputStateCreateInfo::default()
             .vertex_binding_descriptions(&binding_desc)
