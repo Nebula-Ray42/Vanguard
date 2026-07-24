@@ -11,4 +11,3 @@ renderer = { path = "../renderer" }
 winit = "0.29.15"
 raw-window-handle = "0.6"
 nalgebra = "0.33"
-tracing = "0.1.44"

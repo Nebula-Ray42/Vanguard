@@ -1245,7 +1245,6 @@ dependencies = [
  "raw-window-handle",
  "render_api",
  "renderer",
- "tracing",
  "winit",
 ]
 
