@@ -4,6 +4,7 @@ mod mesh;
 mod pipeline;
 mod swapchain;
 mod sync;
+pub mod command;
 
 use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
@@ -15,11 +16,12 @@ use pipeline::GraphicsPipeline;
 use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
 use swapchain::SwapchainTarget;
 use sync::SyncContext;
+use command::CommandRecorder;
 
 use tracing::{info};
 use crate::context::GpuBuffer;
 
-/// GPUに転送済みのメッシュデータ（Vulkanの物理的なリソース）
+/// GPUに転送済みのメッシュデータ
 pub struct GpuMesh {
     pub vertex_buffer: GpuBuffer,
     pub index_buffer: GpuBuffer,
@@ -31,7 +33,6 @@ pub struct VulkanRenderer {
     swapchain_target: SwapchainTarget,
     pipeline: GraphicsPipeline,
     sync: SyncContext,
-    // 複数のメッシュを動的に管理するためのリスト
     pub meshes: Vec<GpuMesh>,
 }
 
@@ -131,15 +132,15 @@ impl VulkanRenderer {
             index_size,
             vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
-        )?;
+        )?.with_index_type(vk::IndexType::UINT32);
 
         copy_buffer(&self.context, self.sync.command_pool, i_staging.buffer, index_buffer.buffer, index_size);
 
         // --- 3. メッシュを登録してIDを返す ---
         let mesh_id = MeshId(self.meshes.len() as u32);
         self.meshes.push(GpuMesh {
-            vertex_buffer, // GpuBuffer をそのまま渡す
-            index_buffer,  // GpuBuffer をそのまま渡す
+            vertex_buffer,
+            index_buffer,
             index_count: data.indices.len() as u32,
         });
 
@@ -150,7 +151,11 @@ impl VulkanRenderer {
         let device = &self.context.device;
         let frame = self.sync.current_frame.get();
 
-        unsafe {
+
+        // ========================================================
+        // 1. 同期・準備フェーズ (Vulkanの生APIに触れるためunsafe)
+        // ========================================================
+        let (image_index, command_buffer) = unsafe {
             device.wait_for_fences(&[self.sync.in_flight_fences[frame]], true, std::u64::MAX).unwrap();
             device.reset_fences(&[self.sync.in_flight_fences[frame]]).unwrap();
 
@@ -167,65 +172,62 @@ impl VulkanRenderer {
             let begin_info = vk::CommandBufferBeginInfo::default();
             device.begin_command_buffer(command_buffer, &begin_info).unwrap();
 
-            let clear_values = [
-                vk::ClearValue { color: vk::ClearColorValue { float32: [0.3, 0.5, 0.8, 1.0] } },
-                vk::ClearValue { depth_stencil: vk::ClearDepthStencilValue { depth: 1.0, stencil: 0 } },
-            ];
+            (image_index, command_buffer)
+        };
 
-            let render_pass_begin = vk::RenderPassBeginInfo::default()
-                .render_pass(self.swapchain_target.render_pass)
-                .framebuffer(self.swapchain_target.framebuffers[image_index as usize])
-                .render_area(vk::Rect2D { offset: vk::Offset2D { x: 0, y: 0 }, extent: self.swapchain_target.extent })
-                .clear_values(&clear_values);
 
-            device.cmd_begin_render_pass(command_buffer, &render_pass_begin, vk::SubpassContents::INLINE);
-            device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::GRAPHICS, self.pipeline.pipeline);
+        // ========================================================
+        // 2. コマンド記録フェーズ
+        // ========================================================
+        let recorder = CommandRecorder::new(&self.context.device, command_buffer);
 
-            // ========================================================
-            // カメラ行列の計算
-            // ========================================================
-            let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
-            let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 100.0);
+        let clear_values = [
+            vk::ClearValue { color: vk::ClearColorValue { float32: [0.3, 0.5, 0.8, 1.0] } },
+            vk::ClearValue { depth_stencil: vk::ClearDepthStencilValue { depth: 1.0, stencil: 0 } },
+        ];
 
-            let mut vulkan_clip = Matrix4::identity();
-            vulkan_clip[(1, 1)] = -1.0;
-            vulkan_clip[(2, 2)] = 0.5;
-            vulkan_clip[(2, 3)] = 0.5;
+        let render_pass_begin = vk::RenderPassBeginInfo::default()
+            .render_pass(self.swapchain_target.render_pass)
+            .framebuffer(self.swapchain_target.framebuffers[image_index as usize])
+            .render_area(vk::Rect2D { offset: vk::Offset2D { x: 0, y: 0 }, extent: self.swapchain_target.extent })
+            .clear_values(&clear_values);
 
-            let view_proj = vulkan_clip * projection * snapshot.view_matrix;
+        recorder.begin_render_pass(&render_pass_begin);
+        recorder.bind_pipeline(self.pipeline.pipeline);
 
-            for instance in &snapshot.instances {
-                let mvp = view_proj * instance.transform;
+        // カメラ行列の計算 (変更なし)
+        let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
+        let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 100.0);
+        let mut vulkan_clip = Matrix4::identity();
+        vulkan_clip[(1, 1)] = -1.0;
+        vulkan_clip[(2, 2)] = 0.5;
+        vulkan_clip[(2, 3)] = 0.5;
+        let view_proj = vulkan_clip * projection * snapshot.view_matrix;
 
-                let mvp_slice = mvp.as_slice();
-                let bytes = std::slice::from_raw_parts(
-                    mvp_slice.as_ptr() as *const u8,
-                    size_of_val(mvp_slice),
-                );
+        for instance in &snapshot.instances {
+            let mvp = view_proj * instance.transform;
+            let mvp_slice = mvp.as_slice();
+            let bytes = unsafe {
+                std::slice::from_raw_parts(mvp_slice.as_ptr() as *const u8, size_of_val(mvp_slice))
+            };
 
-                device.cmd_push_constants(
-                    command_buffer,
-                    self.pipeline.layout,
-                    vk::ShaderStageFlags::VERTEX,
-                    0,
-                    bytes,
-                );
+            recorder.push_constants(self.pipeline.layout, vk::ShaderStageFlags::VERTEX, 0, bytes);
 
-                // IDから対象のGPUメッシュを取得
-                let mesh_index = instance.mesh_id.0 as usize;
-                if let Some(gpu_mesh) = self.meshes.get(mesh_index) {
-
-                    // 1. その図形の頂点データをセット
-                    device.cmd_bind_vertex_buffers(command_buffer, 0, &[gpu_mesh.vertex_buffer.buffer], &[0]);
-
-                    // 2. その図形のインデックスデータ（頂点を繋ぐ順番）をセット
-                    device.cmd_bind_index_buffer(command_buffer, gpu_mesh.index_buffer.buffer, 0, vk::IndexType::UINT32);
-
-                    device.cmd_draw_indexed(command_buffer, gpu_mesh.index_count, 1, 0, 0, 0);
-                }
+            let mesh_index = instance.mesh_id.0 as usize;
+            if let Some(gpu_mesh) = self.meshes.get(mesh_index) {
+                recorder.bind_vertex_buffer(&gpu_mesh.vertex_buffer);
+                recorder.bind_index_buffer(&gpu_mesh.index_buffer);
+                recorder.draw_indexed(gpu_mesh.index_count, 1, 0, 0, 0);
             }
+        }
 
-            device.cmd_end_render_pass(command_buffer);
+        recorder.end_render_pass();
+
+
+        // ========================================================
+        // 3. 送信・画面表示フェーズ (Vulkanの生APIに触れるためunsafe)
+        // ========================================================
+        unsafe {
             device.end_command_buffer(command_buffer).unwrap();
 
             let wait_semaphores = [self.sync.image_available_semaphores[frame]];
@@ -249,7 +251,7 @@ impl VulkanRenderer {
                 .image_indices(&image_indices);
 
             self.swapchain_target.loader.queue_present(self.context.graphics_queue, &present_info).unwrap();
-            self.sync.current_frame.set((frame + 1) % sync::MAX_FRAMES_IN_FLIGHT);
+            self.sync.current_frame.set((frame + 1) % sync::MAX_FRAMES_IN_FLIGHT)
         }
         Ok(())
     }

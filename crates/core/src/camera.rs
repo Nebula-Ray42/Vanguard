@@ -14,7 +14,7 @@ impl Camera {
         Self {
             position: Point3::new(0.0, 3.0, 5.0),
             yaw: -std::f32::consts::FRAC_PI_2, // -90度 (初期状態で原点を向く)
-            pitch: -0.5,                       // 少し下を向く
+            pitch: -0.5
         }
     }
 

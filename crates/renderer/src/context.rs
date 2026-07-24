@@ -183,6 +183,7 @@ impl VulkanContext {
             buffer,
             memory: buffer_memory,
             size,
+            index_type: None,
             device: Arc::clone(&self.device),
         })
     }
@@ -192,7 +193,15 @@ pub struct GpuBuffer {
     pub buffer: vk::Buffer,
     pub memory: vk::DeviceMemory,
     pub size: vk::DeviceSize,
+    pub index_type: Option<vk::IndexType>,
     device: Arc<Device>,
+}
+
+impl GpuBuffer {
+    pub fn with_index_type(mut self, index_type: vk::IndexType) -> Self {
+        self.index_type = Some(index_type);
+        self
+    }
 }
 
 impl Drop for GpuBuffer {

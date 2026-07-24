@@ -9,7 +9,7 @@ use physics::PhysicsWorld;
 use rapier3d::prelude::RigidBodyHandle;
 
 /// エンティティの空間的な状態（位置・回転・スケール）
-/// 将来的に Rapier3D の RigidBody の状態と同期する対象
+/// TODO 将来的に Rapier3D の RigidBody の状態と同期する対象
 #[derive(Debug, Clone)]
 pub struct Transform {
     pub position: Vector3<f32>,

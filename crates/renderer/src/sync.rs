@@ -20,7 +20,6 @@ impl SyncContext {
 
         let mut image_available_semaphores = vec![];
         let mut in_flight_fences = vec![];
-        // CPU側の進行枠（2フレーム分）
         for _ in 0..MAX_FRAMES_IN_FLIGHT {
             unsafe {
                 image_available_semaphores

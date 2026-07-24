@@ -14,7 +14,7 @@ pub struct PhysicsWorld {
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
     ccd_solver: CCDSolver,
-    // query_pipeline はレイキャスト等が必要になるまで一旦削除
+    // TODO query_pipeline はレイキャスト等が必要になるまで一旦削除
 }
 
 impl PhysicsWorld {
@@ -50,7 +50,6 @@ impl PhysicsWorld {
             &mut self.impulse_joint_set,
             &mut self.multibody_joint_set,
             &mut self.ccd_solver,
-            // query_pipeline を引数から削除（12個の引数で正常動作）
             &physics_hooks,
             &event_handler,
         );

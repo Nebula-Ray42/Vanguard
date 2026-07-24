@@ -54,7 +54,7 @@ impl GameState {
         entities
     }
 
-    pub fn sync_transforms(&mut self, physics: &PhysicsWorld) { // ※型の名前は実際の環境に合わせてください
+    pub fn sync_transforms(&mut self, physics: &PhysicsWorld) {
         // dynamic_bodies に登録されている全ての物理ハンドルについて処理
         for (dynamic_id, handle) in self.dynamic_bodies.iter() {
             // Rapier3D などの剛体セットから、ハンドルの現在の位置・回転を取得

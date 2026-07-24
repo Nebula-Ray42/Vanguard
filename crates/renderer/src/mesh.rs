@@ -8,7 +8,7 @@ pub fn get_vertex_binding_description() -> vk::VertexInputBindingDescription {
         .input_rate(vk::VertexInputRate::VERTEX)
 }
 
-/// 頂点データの構造（どこに座標があり、どこに色があるか）をVulkanに教える
+/// 頂点データの構造をVulkanに教える
 pub fn get_vertex_attribute_descriptions() -> [vk::VertexInputAttributeDescription; 2] {
     [
         vk::VertexInputAttributeDescription::default()
