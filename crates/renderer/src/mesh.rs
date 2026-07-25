@@ -9,17 +9,28 @@ pub fn get_vertex_binding_description() -> vk::VertexInputBindingDescription {
 }
 
 /// 頂点データの構造をVulkanに教える
-pub fn get_vertex_attribute_descriptions() -> [vk::VertexInputAttributeDescription; 2] {
+pub fn get_attribute_descriptions() -> [vk::VertexInputAttributeDescription; 3] {
     [
-        vk::VertexInputAttributeDescription::default()
-            .binding(0)
-            .location(0)
-            .format(vk::Format::R32G32B32_SFLOAT)
-            .offset(0),
-        vk::VertexInputAttributeDescription::default()
-            .binding(0)
-            .location(1)
-            .format(vk::Format::R32G32B32_SFLOAT)
-            .offset(size_of::<[f32; 3]>() as u32),
+        // 0: Position
+        vk::VertexInputAttributeDescription {
+            binding: 0,
+            location: 0,
+            format: vk::Format::R32G32B32_SFLOAT,
+            offset: 0,
+        },
+        // 1: Color
+        vk::VertexInputAttributeDescription {
+            binding: 0,
+            location: 1,
+            format: vk::Format::R32G32B32_SFLOAT,
+            offset: 12, // 4 bytes * 3
+        },
+        // 2: Normal <- NEW
+        vk::VertexInputAttributeDescription {
+            binding: 0,
+            location: 2, // Slang側の location と一致させる
+            format: vk::Format::R32G32B32_SFLOAT,
+            offset: 24, // 12 (Position) + 12 (Color)
+        },
     ]
 }

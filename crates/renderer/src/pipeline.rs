@@ -1,6 +1,6 @@
 use ash::{Device, vk};
 use std::ffi::CString;
-use crate::mesh::{get_vertex_attribute_descriptions, get_vertex_binding_description};
+use crate::mesh::{get_attribute_descriptions, get_vertex_binding_description};
 
 // =====================================================================
 // Layer 3: Pipeline Builder (パイプライン生成の複雑さを隠蔽するヘルパー)
@@ -152,7 +152,7 @@ impl GraphicsPipeline {
 
         // 2. 頂点入力の設定
         let binding_desc = [get_vertex_binding_description()];
-        let attrib_desc = get_vertex_attribute_descriptions();
+        let attrib_desc = get_attribute_descriptions();
         let vertex_input = vk::PipelineVertexInputStateCreateInfo::default()
             .vertex_binding_descriptions(&binding_desc)
             .vertex_attribute_descriptions(&attrib_desc);

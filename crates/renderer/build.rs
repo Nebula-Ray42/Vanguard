@@ -30,7 +30,7 @@ fn main() -> Result<(), String> {
     let source_file = format!("{}/main.slang", shader_dir);
 
     // Cargoへの指示: shaderディレクトリ内の変更を監視
-    println!("cargo:rerun-if-changed={}", shader_dir);
+    println!("cargo:rerun-if-changed={}", source_file);
 
     let vert_out = format!("{}/main_vert.spv", shader_dir);
     compile_shader(&source_file, "vertexMain", "vertex", &vert_out)?;

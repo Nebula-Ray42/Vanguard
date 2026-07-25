@@ -9,6 +9,7 @@ Thumbs.db
 /target/
 **/target/
 Cargo.lock
+.cargo
 
 # --- Python ---  
 python/*.egg-info/

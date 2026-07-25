@@ -10,3 +10,4 @@ raw-window-handle = "0.6"
 render_api = { path = "../render_api" }
 nalgebra = "0.33"
 tracing = "0.1.44"
+glam = "0.33.2"

@@ -1,6 +1,8 @@
 // crates/render_api/src/lib.rs
 use nalgebra::Matrix4;
 use std::collections::HashMap;
+use glam::Mat4;
+use bytemuck::{Pod, Zeroable};
 
 // ==========================================
 // 1. Value Objects (ID群)
@@ -28,7 +30,7 @@ pub struct RenderInstance {
 pub struct Vertex {
     pub position: [f32; 3],
     pub color: [f32; 3],
-    // TODO 将来的に法線(normal)やUVなどもここに追加する
+    pub normal: [f32; 3],
 }
 
 // メッシュ全体を表す純粋なデータ
@@ -55,6 +57,26 @@ pub struct RenderRegistry {
     entity_to_mesh: HashMap<EntityId, MeshId>,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct PushConstants {
+    pub mvp: Mat4
+}
+
+impl PushConstants {
+    /// 3つの行列からMVP行列を構築し、常に妥当な状態(Always-Valid)として生成する
+    pub fn new(model: Mat4, view: Mat4, proj: Mat4) -> Self {
+        // glamでは行列の乗算は * 演算子を使用し、数式通り P * V * M の順に記述する
+        let mvp = proj * view * model;
+        Self { mvp }
+    }
+
+    /// 検証用のバイト列表現を取得する
+    pub fn as_bytes(&self) -> &[u8] {
+        bytemuck::bytes_of(self)
+    }
+}
+
 impl RenderRegistry {
     pub fn new() -> Self {
         Self {
@@ -79,28 +101,60 @@ impl RenderRegistry {
 }
 
 impl MeshData {
-    /// キューブ（立方体）を生成する
+    /// キューブ（立方体）を生成する（フラットシェーディング用24頂点）
     pub fn new_cube(size: f32, color: [f32; 3]) -> Self {
         let h = size / 2.0;
+
+        // 各面の法線
+        let n_front  = [ 0.0,  0.0,  1.0];
+        let n_back   = [ 0.0,  0.0, -1.0];
+        let n_top    = [ 0.0,  1.0,  0.0];
+        let n_bottom = [ 0.0, -1.0,  0.0];
+        let n_right  = [ 1.0,  0.0,  0.0];
+        let n_left   = [-1.0,  0.0,  0.0];
+
+        // 6面 × 4頂点 = 24頂点
         let vertices = vec![
-            Vertex { position: [-h, -h,  h], color }, // 0: 左下前
-            Vertex { position: [ h, -h,  h], color }, // 1: 右下前
-            Vertex { position: [ h,  h,  h], color }, // 2: 右上前
-            Vertex { position: [-h,  h,  h], color }, // 3: 左上前
-            Vertex { position: [-h, -h, -h], color }, // 4: 左下奥
-            Vertex { position: [ h, -h, -h], color }, // 5: 右下奥
-            Vertex { position: [ h,  h, -h], color }, // 6: 右上奥
-            Vertex { position: [-h,  h, -h], color }, // 7: 左上奥
+            // 前 (Front)
+            Vertex { position: [-h, -h,  h], color, normal: n_front }, // 0
+            Vertex { position: [ h, -h,  h], color, normal: n_front }, // 1
+            Vertex { position: [ h,  h,  h], color, normal: n_front }, // 2
+            Vertex { position: [-h,  h,  h], color, normal: n_front }, // 3
+            // 後 (Back)
+            Vertex { position: [ h, -h, -h], color, normal: n_back },  // 4
+            Vertex { position: [-h, -h, -h], color, normal: n_back },  // 5
+            Vertex { position: [-h,  h, -h], color, normal: n_back },  // 6
+            Vertex { position: [ h,  h, -h], color, normal: n_back },  // 7
+            // 上 (Top)
+            Vertex { position: [-h,  h,  h], color, normal: n_top },   // 8
+            Vertex { position: [ h,  h,  h], color, normal: n_top },   // 9
+            Vertex { position: [ h,  h, -h], color, normal: n_top },   // 10
+            Vertex { position: [-h,  h, -h], color, normal: n_top },   // 11
+            // 下 (Bottom)
+            Vertex { position: [-h, -h, -h], color, normal: n_bottom },// 12
+            Vertex { position: [ h, -h, -h], color, normal: n_bottom },// 13
+            Vertex { position: [ h, -h,  h], color, normal: n_bottom },// 14
+            Vertex { position: [-h, -h,  h], color, normal: n_bottom },// 15
+            // 右 (Right)
+            Vertex { position: [ h, -h,  h], color, normal: n_right }, // 16
+            Vertex { position: [ h, -h, -h], color, normal: n_right }, // 17
+            Vertex { position: [ h,  h, -h], color, normal: n_right }, // 18
+            Vertex { position: [ h,  h,  h], color, normal: n_right }, // 19
+            // 左 (Left)
+            Vertex { position: [-h, -h, -h], color, normal: n_left },  // 20
+            Vertex { position: [-h, -h,  h], color, normal: n_left },  // 21
+            Vertex { position: [-h,  h,  h], color, normal: n_left },  // 22
+            Vertex { position: [-h,  h, -h], color, normal: n_left },  // 23
         ];
 
-        // 36個のインデックス（6面 × 2ポリゴン × 3頂点）
+        // 6面 × 2ポリゴン × 3頂点 = 36インデックス
         let indices = vec![
-            0, 1, 2, 2, 3, 0, // 前
-            1, 5, 6, 6, 2, 1, // 右
-            7, 6, 5, 5, 4, 7, // 後
-            4, 0, 3, 3, 7, 4, // 左
-            3, 2, 6, 6, 7, 3, // 上
-            4, 5, 1, 1, 0, 4, // 下
+            0,  1,  2,  2,  3,  0,  // 前
+            4,  5,  6,  6,  7,  4,  // 後
+            8,  9, 10, 10, 11,  8,  // 上
+            12, 13, 14, 14, 15, 12,  // 下
+            16, 17, 18, 18, 19, 16,  // 右
+            20, 21, 22, 22, 23, 20,  // 左
         ];
 
         Self { vertices, indices }
@@ -110,12 +164,14 @@ impl MeshData {
     pub fn new_plane(width: f32, depth: f32, color: [f32; 3]) -> Self {
         let hw = width / 2.0;
         let hd = depth / 2.0;
-        // Y=0 の平面上に4つの頂点を配置
+        // 床は真上を向いているので Y=1.0 が法線
+        let n_up = [0.0, 1.0, 0.0];
+
         let vertices = vec![
-            Vertex { position: [-hw, 0.0,  hd], color }, // 0: 左前
-            Vertex { position: [ hw, 0.0,  hd], color }, // 1: 右前
-            Vertex { position: [ hw, 0.0, -hd], color }, // 2: 右奥
-            Vertex { position: [-hw, 0.0, -hd], color }, // 3: 左奥
+            Vertex { position: [-hw, 0.0,  hd], color, normal: n_up }, // 0: 左前
+            Vertex { position: [ hw, 0.0,  hd], color, normal: n_up }, // 1: 右前
+            Vertex { position: [ hw, 0.0, -hd], color, normal: n_up }, // 2: 右奥
+            Vertex { position: [-hw, 0.0, -hd], color, normal: n_up }, // 3: 左奥
         ];
 
         let indices = vec![
