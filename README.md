@@ -1,0 +1,2 @@
+### WARNING:
+This is NOT a general-purpose game engine. It does not aim to be the next Unity or Unreal.This is a highly opinionated, specialized engine built with Rust, Ash, and Slang, designed exclusively to achieve the ultimate toon-shading visuals and extreme performance via Data-Oriented Design.If you are looking for an easy, cross-platform engine to make a generic mobile game, look elsewhere.

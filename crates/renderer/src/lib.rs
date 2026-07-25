@@ -165,17 +165,29 @@ impl VulkanRenderer {
         let recorder = &active_frame.recorder;
 
         let clear_values = [
-            vk::ClearValue { color: vk::ClearColorValue { float32: [0.3, 0.5, 0.8, 1.0] } },
-            vk::ClearValue { depth_stencil: vk::ClearDepthStencilValue { depth: 1.0, stencil: 0 } },
+            // 0: カラーバッファのクリア（黒色など）
+            vk::ClearValue {
+                color: vk::ClearColorValue { float32: [0.0, 0.0, 0.0, 1.0] },
+            },
+            // 1: 深度バッファのクリア（1.0 = Zクリップ空間における「一番奥」）
+            vk::ClearValue {
+                depth_stencil: vk::ClearDepthStencilValue {
+                    depth: 1.0,
+                    stencil: 0,
+                },
+            },
         ];
 
-        let render_pass_begin = vk::RenderPassBeginInfo::default()
+        let render_pass_begin_info = vk::RenderPassBeginInfo::default()
             .render_pass(self.swapchain_target.render_pass)
             .framebuffer(self.swapchain_target.framebuffers[active_frame.image_index as usize])
-            .render_area(vk::Rect2D { offset: vk::Offset2D { x: 0, y: 0 }, extent: self.swapchain_target.extent })
+            .render_area(vk::Rect2D {
+                offset: vk::Offset2D { x: 0, y: 0 },
+                extent: self.swapchain_target.extent
+            })
             .clear_values(&clear_values);
 
-        recorder.begin_render_pass(&render_pass_begin);
+        recorder.begin_render_pass(&render_pass_begin_info);
         recorder.bind_pipeline(self.pipeline.pipeline);
 
         // カメラ行列の計算

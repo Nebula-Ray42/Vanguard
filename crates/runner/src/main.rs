@@ -48,10 +48,10 @@ fn build_render_snapshot(game_state: &GameState, registry: &RenderRegistry) -> R
     for entity in entities {
         let render_entity_id = EntityId(entity.id.0);
 
-        tracing::info!("Coreから来たEntityId: {}", render_entity_id.0);
+        // tracing::info!("Coreから来たEntityId: {}", render_entity_id.0);
 
         let Some(mesh_id) = registry.get_mesh_for(&render_entity_id) else {
-            tracing::warn!("警告: EntityId({}) はRegistryに未登録のため描画スキップ", render_entity_id.0);
+            // tracing::warn!("警告: EntityId({}) はRegistryに未登録のため描画スキップ", render_entity_id.0);
             continue;
         };
 
@@ -73,7 +73,7 @@ fn build_render_snapshot(game_state: &GameState, registry: &RenderRegistry) -> R
             transform: nalgebra::Matrix4::identity().into(),
         });
     }
-    tracing::info!("最終的な描画インスタンス数: {}", snapshot.instances.len());
+    // tracing::info!("最終的な描画インスタンス数: {}", snapshot.instances.len());
 
     snapshot
 }

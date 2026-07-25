@@ -48,7 +48,7 @@ impl<'a> PipelineBuilder<'a> {
             depth_stencil: vk::PipelineDepthStencilStateCreateInfo::default()
                 .depth_test_enable(true)
                 .depth_write_enable(true)
-                .depth_compare_op(vk::CompareOp::LESS) // 元の設定
+                .depth_compare_op(vk::CompareOp::LESS)
                 .depth_bounds_test_enable(false)
                 .stencil_test_enable(false),
             pipeline_layout: vk::PipelineLayout::null(),
@@ -132,8 +132,8 @@ impl GraphicsPipeline {
         extent: vk::Extent2D,
     ) -> Result<Self, String> {
         // 1. シェーダーの読み込み
-        let vert_spv = include_bytes!("../../../assets/shaders/vert.spv");
-        let frag_spv = include_bytes!("../../../assets/shaders/frag.spv");
+        let vert_spv = include_bytes!("../../../assets/shaders/main_vert.spv");
+        let frag_spv = include_bytes!("../../../assets/shaders/main_frag.spv");
 
         let vert_module = unsafe { create_shader_module(device, vert_spv) };
         let frag_module = unsafe { create_shader_module(device, frag_spv) };
