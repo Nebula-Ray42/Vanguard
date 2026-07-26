@@ -5,6 +5,11 @@ use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::ffi::CString;
 use std::sync::Arc;
 
+use render_api::engine_error::EngineError;
+
+/// Vulkanのコアインスタンスとデバイスを管理するコンテキスト (Layer 1)
+///
+/// エンジンのライフサイクル全体で生存し、GPUとの通信の基盤を提供します。
 #[allow(dead_code)]
 pub struct VulkanContext {
     pub entry: Entry,
@@ -17,12 +22,18 @@ pub struct VulkanContext {
 }
 
 impl VulkanContext {
+    /// Vulkan APIを初期化し、描画可能なデバイスコンテキストを生成します。
+    ///
+    /// # Errors
+    /// Vulkanローダーの取得、インスタンスの生成、物理デバイスの選定、または
+    /// 論理デバイスの生成に失敗した場合に `EngineError` を返します。
     pub fn new(
         display_handle: RawDisplayHandle,
         window_handle: RawWindowHandle,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, EngineError> {
         let entry = unsafe {
-            Entry::load().map_err(|e| format!("Vulkan APIのロードに失敗しました: {}", e))?
+            Entry::load()
+                .map_err(|e| EngineError::Legacy(format!("Vulkan APIのロードに失敗しました: {}", e)))?
         };
 
         let app_name = CString::new("Rey Engine").unwrap();
@@ -34,7 +45,7 @@ impl VulkanContext {
             .api_version(vk::API_VERSION_1_3);
 
         let instance_extensions = ash_window::enumerate_required_extensions(display_handle)
-            .map_err(|e| format!("ウィンドウ拡張機能の取得に失敗しました: {}", e))?
+            .map_err(|e| EngineError::Legacy(format!("ウィンドウ拡張機能の取得に失敗しました: {}", e)))?
             .to_vec();
 
         let layer_names = [c"VK_LAYER_KHRONOS_validation".as_ptr()];
@@ -47,12 +58,12 @@ impl VulkanContext {
         let instance = unsafe {
             entry
                 .create_instance(&create_info, None)
-                .map_err(|e| format!("Vulkan Instanceの生成に失敗しました: {}", e))?
+                .map_err(|e| EngineError::Legacy(format!("Vulkan Instanceの生成に失敗しました: {}", e)))?
         };
 
         let surface = unsafe {
             ash_window::create_surface(&entry, &instance, display_handle, window_handle, None)
-                .map_err(|e| format!("Vulkan Surfaceの生成に失敗しました: {}", e))?
+                .map_err(|e| EngineError::Legacy(format!("Vulkan Surfaceの生成に失敗しました: {}", e)))?
         };
 
         let surface_loader = SurfaceLoader::new(&entry, &instance);
@@ -60,7 +71,7 @@ impl VulkanContext {
         let physical_devices = unsafe {
             instance
                 .enumerate_physical_devices()
-                .map_err(|e| format!("物理デバイスの取得に失敗しました: {}", e))?
+                .map_err(|e| EngineError::Legacy(format!("物理デバイスの取得に失敗しました: {}", e)))?
         };
 
         let (physical_device, queue_family_index) = physical_devices
@@ -82,7 +93,7 @@ impl VulkanContext {
                     }
                 })
             })
-            .ok_or_else(|| "適合するGPUとキューファミリーが見つかりませんでした".to_string())?;
+            .ok_or_else(|| EngineError::Legacy("適合するGPUとキューファミリーが見つかりませんでした".to_string()))?;
 
         let queue_priorities = [1.0_f32];
         let queue_create_info = vk::DeviceQueueCreateInfo::default()
@@ -101,7 +112,7 @@ impl VulkanContext {
         let device = unsafe {
             instance
                 .create_device(physical_device, &device_create_info, None)
-                .map_err(|e| format!("論理デバイスの生成に失敗しました: {}", e))?
+                .map_err(|e| EngineError::Legacy(format!("論理デバイスの生成に失敗しました: {}", e)))?
         };
 
         let graphics_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
@@ -117,11 +128,12 @@ impl VulkanContext {
         })
     }
 
+    /// 指定された要件を満たすGPUメモリのタイプインデックスを検索します。
     pub fn find_memory_type(
         memory_properties: &vk::PhysicalDeviceMemoryProperties,
         type_filter: u32,
         properties: vk::MemoryPropertyFlags,
-    ) -> Result<u32, String> {
+    ) -> Result<u32, EngineError> {
         for i in 0..memory_properties.memory_type_count {
             let is_type_suitable = (type_filter & (1 << i)) != 0;
             let actual_properties = memory_properties.memory_types[i as usize].property_flags;
@@ -131,15 +143,19 @@ impl VulkanContext {
                 return Ok(i);
             }
         }
-        Err("条件に適合するメモリタイプが見つかりませんでした".to_string())
+        Err(EngineError::Legacy("条件に適合するメモリタイプが見つかりませんでした".to_string()))
     }
 
+    /// GPU上にバッファ（頂点データやインデックスデータ用）を確保します。
+    ///
+    /// # Errors
+    /// バッファの作成、メモリの割り当て、またはバインドに失敗した場合に `EngineError` を返します。
     pub fn create_buffer(
         &self,
         size: vk::DeviceSize,
         usage: vk::BufferUsageFlags,
         properties: vk::MemoryPropertyFlags,
-    ) -> Result<GpuBuffer, String> {
+    ) -> Result<GpuBuffer, EngineError> {
         let buffer_info = vk::BufferCreateInfo::default()
             .size(size)
             .usage(usage)
@@ -148,7 +164,7 @@ impl VulkanContext {
         let buffer = unsafe {
             self.device
                 .create_buffer(&buffer_info, None)
-                .map_err(|e| format!("バッファの生成に失敗しました: {}", e))?
+                .map_err(|e| EngineError::Legacy(format!("バッファの生成に失敗しました: {}", e)))?
         };
 
         let mem_requirements = unsafe { self.device.get_buffer_memory_requirements(buffer) };
@@ -170,13 +186,13 @@ impl VulkanContext {
         let buffer_memory = unsafe {
             self.device
                 .allocate_memory(&alloc_info, None)
-                .map_err(|e| format!("バッファ用メモリの確保に失敗しました: {}", e))?
+                .map_err(|e| EngineError::Legacy(format!("バッファ用メモリの確保に失敗しました: {}", e)))?
         };
 
         unsafe {
             self.device
                 .bind_buffer_memory(buffer, buffer_memory, 0)
-                .map_err(|e| format!("バッファとメモリのバインドに失敗しました: {}", e))?;
+                .map_err(|e| EngineError::Legacy(format!("バッファとメモリのバインドに失敗しました: {}", e)))?;
         }
 
         Ok(GpuBuffer {
@@ -189,15 +205,19 @@ impl VulkanContext {
     }
 }
 
+/// GPU上に確保されたメモリ領域を表すラッパー
+///
+/// スコープを抜けると `Drop` トレイトにより自動的にVulkanのメモリが解放されます。
 pub struct GpuBuffer {
     pub buffer: vk::Buffer,
     pub memory: vk::DeviceMemory,
     pub size: vk::DeviceSize,
     pub index_type: Option<vk::IndexType>,
-    device: Arc<Device>,
+    device: Arc<Device>, // Drop時に安全に解放するためDeviceを保持
 }
 
 impl GpuBuffer {
+    /// このバッファをインデックスバッファとして扱うための型情報を付与します。
     pub fn with_index_type(mut self, index_type: vk::IndexType) -> Self {
         self.index_type = Some(index_type);
         self

@@ -1,3 +1,8 @@
+pub mod swapchain;
+pub mod engine_error;
+#[path = "render-pass-error.rs"]
+pub mod render_pass_error;
+
 // crates/render_api/src/lib.rs
 use nalgebra::Matrix4;
 use std::collections::HashMap;

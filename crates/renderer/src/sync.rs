@@ -1,8 +1,14 @@
 use ash::{Device, vk};
 use std::cell::Cell;
 
+// ※ パスは環境に合わせて調整してください
+use render_api::engine_error::EngineError;
+
 pub const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
+/// 描画の同期（セマフォ・フェンス）とコマンドバッファを管理するコンテキスト
+///
+/// GPUとCPUの実行タイミングを制御し、フレームの重なりや描画の破綻を防ぐ役割を担います。
 pub struct SyncContext {
     pub image_available_semaphores: Vec<vk::Semaphore>,
     pub render_finished_semaphores: Vec<vk::Semaphore>,
@@ -13,39 +19,60 @@ pub struct SyncContext {
 }
 
 impl SyncContext {
-    // 引数に image_count を追加
-    pub fn new(device: &Device, queue_family_index: u32, image_count: u32) -> Result<Self, String> {
+    /// 同期オブジェクトとコマンドプールを初期化します。
+    ///
+    /// # Errors
+    /// セマフォ、フェンス、コマンドプール、またはコマンドバッファの生成に失敗した場合に `EngineError` を返します。
+    pub fn new(device: &Device, queue_family_index: u32, image_count: u32) -> Result<Self, EngineError> {
         let semaphore_info = vk::SemaphoreCreateInfo::default();
         let fence_info = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
 
-        let mut image_available_semaphores = vec![];
-        let mut in_flight_fences = vec![];
+        // 要素数が確定しているため、with_capacity でメモリの再確保を防止
+        let mut image_available_semaphores = Vec::with_capacity(MAX_FRAMES_IN_FLIGHT);
+        let mut in_flight_fences = Vec::with_capacity(MAX_FRAMES_IN_FLIGHT);
+
         for _ in 0..MAX_FRAMES_IN_FLIGHT {
-            unsafe {
-                image_available_semaphores
-                    .push(device.create_semaphore(&semaphore_info, None).unwrap());
-                in_flight_fences.push(device.create_fence(&fence_info, None).unwrap());
-            }
+            // FFI呼び出しのみを unsafe にし、エラー時は安全に中断
+            let sem = unsafe {
+                device.create_semaphore(&semaphore_info, None)
+                    .map_err(|e| EngineError::Legacy(format!("image_available セマフォの作成に失敗: {}", e)))?
+            };
+            let fence = unsafe {
+                device.create_fence(&fence_info, None)
+                    .map_err(|e| EngineError::Legacy(format!("in_flight フェンスの作成に失敗: {}", e)))?
+            };
+
+            image_available_semaphores.push(sem);
+            in_flight_fences.push(fence);
         }
 
-        let mut render_finished_semaphores = vec![];
+        let mut render_finished_semaphores = Vec::with_capacity(image_count as usize);
         for _ in 0..image_count {
-            unsafe {
-                render_finished_semaphores
-                    .push(device.create_semaphore(&semaphore_info, None).unwrap());
-            }
+            let sem = unsafe {
+                device.create_semaphore(&semaphore_info, None)
+                    .map_err(|e| EngineError::Legacy(format!("render_finished セマフォの作成に失敗: {}", e)))?
+            };
+            render_finished_semaphores.push(sem);
         }
 
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(queue_family_index)
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER);
-        let command_pool = unsafe { device.create_command_pool(&pool_info, None).unwrap() };
+
+        let command_pool = unsafe {
+            device.create_command_pool(&pool_info, None)
+                .map_err(|e| EngineError::Legacy(format!("コマンドプールの作成に失敗: {}", e)))?
+        };
 
         let alloc_info = vk::CommandBufferAllocateInfo::default()
             .command_pool(command_pool)
             .level(vk::CommandBufferLevel::PRIMARY)
             .command_buffer_count(MAX_FRAMES_IN_FLIGHT as u32);
-        let command_buffers = unsafe { device.allocate_command_buffers(&alloc_info).unwrap() };
+
+        let command_buffers = unsafe {
+            device.allocate_command_buffers(&alloc_info)
+                .map_err(|e| EngineError::Legacy(format!("コマンドバッファの割り当てに失敗: {}", e)))?
+        };
 
         Ok(Self {
             image_available_semaphores,
@@ -57,6 +84,10 @@ impl SyncContext {
         })
     }
 
+    /// 同期オブジェクトとコマンドプールを破棄します。
+    ///
+    /// # Safety
+    /// この関数はGPUが完全に待機状態（Idle）である時にのみ呼び出さなければなりません。
     pub unsafe fn destroy(&self, device: &Device) {
         unsafe {
             device.destroy_command_pool(self.command_pool, None);

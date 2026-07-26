@@ -5,6 +5,7 @@ mod pipeline;
 mod swapchain;
 mod sync;
 pub mod command;
+pub mod shader;
 
 use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
@@ -20,6 +21,7 @@ use sync::SyncContext;
 use command::CommandRecorder;
 
 use tracing::info;
+use render_api::engine_error::EngineError;
 
 /// GPUに転送済みのメッシュデータ
 pub struct GpuMesh {
@@ -49,7 +51,7 @@ impl VulkanRenderer {
         window_handle: RawWindowHandle,
         window_width: u32,
         window_height: u32,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, EngineError> {
         let context = VulkanContext::new(display_handle, window_handle)?;
 
         let queue_family_index = unsafe {
@@ -91,7 +93,7 @@ impl VulkanRenderer {
         })
     }
 
-    pub fn create_mesh_from_data(&mut self, data: &MeshData) -> Result<MeshId, String> {
+    pub fn create_mesh_from_data(&mut self, data: &MeshData) -> Result<MeshId, EngineError> {
         // --- 1. 頂点バッファの作成と転送 ---
         let vertex_size = (data.vertices.len() * size_of::<Vertex>()) as vk::DeviceSize;
 
@@ -114,7 +116,7 @@ impl VulkanRenderer {
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
 
-        copy_buffer(&self.context, self.sync.command_pool, v_staging.buffer, vertex_buffer.buffer, vertex_size);
+        copy_buffer(&self.context, self.sync.command_pool, v_staging.buffer, vertex_buffer.buffer, vertex_size)?;
 
         // --- 2. インデックスバッファの作成と転送 ---
         let index_size = (data.indices.len() * size_of::<u32>()) as vk::DeviceSize;
@@ -137,8 +139,8 @@ impl VulkanRenderer {
             vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?.with_index_type(vk::IndexType::UINT32);
-
-        copy_buffer(&self.context, self.sync.command_pool, i_staging.buffer, index_buffer.buffer, index_size);
+        
+        copy_buffer(&self.context, self.sync.command_pool, i_staging.buffer, index_buffer.buffer, index_size)?;
 
         // --- 3. メッシュを登録してIDを返す ---
         let mesh_id = MeshId(self.meshes.len() as u32);
@@ -154,28 +156,29 @@ impl VulkanRenderer {
     /// ========================================================
     /// メイン描画ループ
     /// ========================================================
-    pub fn draw_frame(&self, snapshot: &RenderSnapshot) -> Result<(), String> {
-        // 1. フレームの開始（同期処理の隠蔽）
-        let active_frame = match self.begin_frame() {
+    ///
+    /// # Errors
+    /// フレームの取得、描画コマンドの記録、または送信に失敗した場合に `EngineError` を返します。
+    pub fn draw_frame(&self, snapshot: &RenderSnapshot) -> Result<(), EngineError> {
+        tracing::trace!("描画リクエスト: {} 個のインスタンス", snapshot.instances.len());
+        info!("描画対象のインスタンス数: {}", snapshot.instances.len());
+
+        // 1. フレームの開始（エラーが起きたら `?` で即座に返す）
+        let active_frame = match self.begin_frame()? {
             Some(frame) => frame,
-            None => return Ok(()), // リサイズ時などは描画をスキップ
+            None => {
+                tracing::warn!("⚠️ begin_frame が None を返したため、描画をスキップしました");
+                return Ok(());
+            }
         };
 
-        // 2. コマンド記録フェーズ（完全に安全なラッパー群）
+        // 2. コマンド記録フェーズ
         let recorder = &active_frame.recorder;
 
         let clear_values = [
-            // 0: カラーバッファのクリア（黒色など）
-            vk::ClearValue {
-                color: vk::ClearColorValue { float32: [0.0, 0.0, 0.0, 1.0] },
-            },
-            // 1: 深度バッファのクリア（1.0 = Zクリップ空間における「一番奥」）
-            vk::ClearValue {
-                depth_stencil: vk::ClearDepthStencilValue {
-                    depth: 1.0,
-                    stencil: 0,
-                },
-            },
+            // R: 0.0, G: 0.0, B: 1.0, A: 1.0 で真っ青に設定
+            vk::ClearValue { color: vk::ClearColorValue { float32: [0.0, 0.0, 1.0, 1.0] } },
+            vk::ClearValue { depth_stencil: vk::ClearDepthStencilValue { depth: 1.0, stencil: 0 } },
         ];
 
         let render_pass_begin_info = vk::RenderPassBeginInfo::default()
@@ -190,17 +193,59 @@ impl VulkanRenderer {
         recorder.begin_render_pass(&render_pass_begin_info);
         recorder.bind_pipeline(self.pipeline.pipeline);
 
+        let viewport = vk::Viewport {
+            x: 0.0,
+            y: 0.0,
+            width: self.swapchain_target.extent.width as f32,
+            height: self.swapchain_target.extent.height as f32,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        };
+        recorder.set_viewport(0, &[viewport]);
+
+        let scissor = vk::Rect2D {
+            offset: vk::Offset2D { x: 0, y: 0 },
+            extent: self.swapchain_target.extent,
+        };
+        recorder.set_scissor(0, &[scissor]);
+
+        // カメラ行列の計算
         // カメラ行列の計算
         let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
-        let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 100.0);
+        // 🔍 罠1チェック: ここが NaN や 0 になっていないか確認
+        info!("画面アスペクト比: {}", aspect);
+
+        let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 1000.0); // 🔴 Zの限界を 100.0 から 1000.0 に伸ばす
         let mut vulkan_clip = Matrix4::identity();
         vulkan_clip[(1, 1)] = -1.0;
         vulkan_clip[(2, 2)] = 0.5;
         vulkan_clip[(2, 3)] = 0.5;
-        let view_proj = vulkan_clip * projection * snapshot.view_matrix;
 
-        for instance in &snapshot.instances {
-            let mvp = view_proj * instance.transform;
+        // 🔍 罠2対策: オブジェクトが巨大すぎた場合に備え、カメラを「上20、手前50」まで思いっきり下げる
+        let eye = nalgebra::Point3::new(0.0, 20.0, 50.0);
+        let target = nalgebra::Point3::new(0.0, 0.0, 0.0);
+        let up = nalgebra::Vector3::y();
+        let test_view_matrix = Matrix4::look_at_rh(&eye, &target, &up);
+
+        let view_proj = vulkan_clip * projection * test_view_matrix;
+
+        for (i, instance) in snapshot.instances.iter().enumerate() {
+            let mut mvp = view_proj * instance.transform;
+
+            // 🔍 最終結果チェック: NaN（非数）が混じっていないか確認
+            if i == 0 {
+                info!("最終MVP行列:\n{:.2}", mvp);
+            }
+
+            // ========================================================
+            // 🚨 罠3対策: 行列の転置（Transpose）
+            // ========================================================
+            // もしシェーダー（.vert）の計算とRustのメモリ配列の縦横が逆だった場合、
+            // これを有効にすると一発で直ります。
+            // ※ もし今回の実行でダメだったら、次の実行でこのコメントアウトを外して試してください！
+             mvp = mvp.transpose();
+            // ========================================================
+
             let mvp_slice = mvp.as_slice();
             let bytes = unsafe {
                 std::slice::from_raw_parts(mvp_slice.as_ptr() as *const u8, size_of_val(mvp_slice))
@@ -211,15 +256,15 @@ impl VulkanRenderer {
             let mesh_index = instance.mesh_id.0 as usize;
             if let Some(gpu_mesh) = self.meshes.get(mesh_index) {
                 recorder.bind_vertex_buffer(&gpu_mesh.vertex_buffer);
-                recorder.bind_index_buffer(&gpu_mesh.index_buffer);
+                recorder.bind_index_buffer(&gpu_mesh.index_buffer)?;
                 recorder.draw_indexed(gpu_mesh.index_count, 1, 0, 0, 0);
             }
         }
 
+
         recorder.end_render_pass();
 
-        // 3. フレームの終了（送信処理の隠蔽）
-        self.end_frame(active_frame);
+        self.end_frame(active_frame)?;
 
         Ok(())
     }
@@ -227,78 +272,108 @@ impl VulkanRenderer {
     /// ========================================================
     /// フレームの開始（コールドパス）
     /// ========================================================
-    pub fn begin_frame(&self) -> Option<ActiveFrame<'_>> {
+    /// 描画するフレームの準備を行います。
+    ///
+    /// # Returns
+    /// - `Ok(Some(ActiveFrame))`: 描画の準備が完了し、コマンドの記録が可能な状態。
+    /// - `Ok(None)`: ウィンドウサイズが変更された等で、画面の再構築が必要な場合。
+    ///
+    /// # Errors
+    /// Vulkan内部での待機やメモリ確保に失敗した場合に `EngineError` を返します。
+    pub fn begin_frame(&self) -> Result<Option<ActiveFrame<'_>>, EngineError> {
         let frame = self.sync.current_frame.get();
 
         unsafe {
-            self.context.device.wait_for_fences(&[self.sync.in_flight_fences[frame]], true, std::u64::MAX).unwrap();
+            self.context.device.wait_for_fences(&[self.sync.in_flight_fences[frame]], true, u64::MAX)
+                .map_err(|e| EngineError::Legacy(format!("Fenceの待機に失敗: {:?}", e)))?;
+        }
 
-            let acquire_result = self.swapchain_target.loader.acquire_next_image(
+        let acquire_result = unsafe {
+            self.swapchain_target.loader.acquire_next_image(
                 self.swapchain_target.swapchain,
-                std::u64::MAX,
+                u64::MAX,
                 self.sync.image_available_semaphores[frame],
                 vk::Fence::null(),
-            );
+            )
+        };
 
-            let image_index = match acquire_result {
-                Ok((index, _)) => index,
-                Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => return None,
-                Err(e) => panic!("画像の取得に失敗しました: {:?}", e),
-            };
+        let image_index = match acquire_result {
+            Ok((index, _)) => index,
+            Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => return Ok(None),
+            Err(e) => return Err(EngineError::Legacy(format!("画像の取得に失敗: {:?}", e))),
+        };
 
-            self.context.device.reset_fences(&[self.sync.in_flight_fences[frame]]).unwrap();
+        unsafe {
+            self.context.device.reset_fences(&[self.sync.in_flight_fences[frame]])
+                .map_err(|e| EngineError::Legacy(format!("Fenceのリセットに失敗: {:?}", e)))?;
+        }
 
-            let command_buffer = self.sync.command_buffers[frame];
-            self.context.device.reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty()).unwrap();
+        let command_buffer = self.sync.command_buffers[frame];
+
+        unsafe {
+            self.context.device.reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty())
+                .map_err(|e| EngineError::Legacy(format!("コマンドバッファのリセットに失敗: {:?}", e)))?;
 
             let begin_info = vk::CommandBufferBeginInfo::default();
-            self.context.device.begin_command_buffer(command_buffer, &begin_info).unwrap();
-
-            let recorder = CommandRecorder::new(&self.context.device, command_buffer);
-
-            Some(ActiveFrame {
-                recorder,
-                image_index,
-                frame_index: frame,
-            })
+            self.context.device.begin_command_buffer(command_buffer, &begin_info)
+                .map_err(|e| EngineError::Legacy(format!("コマンドバッファの記録開始に失敗: {:?}", e)))?;
         }
+
+        let recorder = CommandRecorder::new(&self.context.device, command_buffer);
+
+        Ok(Some(ActiveFrame {
+            recorder,
+            image_index,
+            frame_index: frame,
+        }))
     }
 
     /// ========================================================
     /// フレームの終了と送信（コールドパス）
     /// ========================================================
-    pub fn end_frame(&self, active_frame: ActiveFrame) {
+    /// 記録したコマンドをGPUのキューに送信し、画面に表示します。
+    ///
+    /// # Errors
+    /// GPUへのキュー送信、または画面への表示要求に失敗した場合に `EngineError` を返します。
+    pub fn end_frame(&self, active_frame: ActiveFrame) -> Result<(), EngineError> {
         unsafe {
-            self.context.device.end_command_buffer(active_frame.recorder.command_buffer).unwrap();
+            self.context.device.end_command_buffer(active_frame.recorder.command_buffer)
+                .map_err(|e| EngineError::Legacy(format!("コマンドバッファの終了に失敗: {:?}", e)))?;
+        }
 
-            let wait_semaphores = [self.sync.image_available_semaphores[active_frame.frame_index]];
-            let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
-            let command_buffers_submit = [active_frame.recorder.command_buffer];
-            let signal_semaphores = [self.sync.render_finished_semaphores[active_frame.image_index as usize]];
+        let wait_semaphores = [self.sync.image_available_semaphores[active_frame.frame_index]];
+        let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
+        let command_buffers_submit = [active_frame.recorder.command_buffer];
+        let signal_semaphores = [self.sync.render_finished_semaphores[active_frame.image_index as usize]];
 
-            let submit_info = vk::SubmitInfo::default()
-                .wait_semaphores(&wait_semaphores)
-                .wait_dst_stage_mask(&wait_stages)
-                .command_buffers(&command_buffers_submit)
-                .signal_semaphores(&signal_semaphores);
+        let submit_info = vk::SubmitInfo::default()
+            .wait_semaphores(&wait_semaphores)
+            .wait_dst_stage_mask(&wait_stages)
+            .command_buffers(&command_buffers_submit)
+            .signal_semaphores(&signal_semaphores);
 
+        unsafe {
             self.context.device.queue_submit(
                 self.context.graphics_queue,
                 &[submit_info],
                 self.sync.in_flight_fences[active_frame.frame_index]
-            ).unwrap();
-
-            let swapchains = [self.swapchain_target.swapchain];
-            let image_indices = [active_frame.image_index];
-            let present_info = vk::PresentInfoKHR::default()
-                .wait_semaphores(&signal_semaphores)
-                .swapchains(&swapchains)
-                .image_indices(&image_indices);
-
-            let _ = self.swapchain_target.loader.queue_present(self.context.graphics_queue, &present_info);
-
-            self.sync.current_frame.set((active_frame.frame_index + 1) % sync::MAX_FRAMES_IN_FLIGHT);
+            ).map_err(|e| EngineError::Legacy(format!("キューの送信に失敗: {:?}", e)))?;
         }
+
+        let swapchains = [self.swapchain_target.swapchain];
+        let image_indices = [active_frame.image_index];
+        let present_info = vk::PresentInfoKHR::default()
+            .wait_semaphores(&signal_semaphores)
+            .swapchains(&swapchains)
+            .image_indices(&image_indices);
+
+        unsafe {
+            let _ = self.swapchain_target.loader.queue_present(self.context.graphics_queue, &present_info);
+        }
+
+        self.sync.current_frame.set((active_frame.frame_index + 1) % sync::MAX_FRAMES_IN_FLIGHT);
+
+        Ok(())
     }
 }
 
@@ -306,7 +381,7 @@ impl Drop for VulkanRenderer {
     fn drop(&mut self) {
         unsafe {
             self.context.device.device_wait_idle().unwrap();
-            self.meshes.clear(); // ここで RAII によって GpuBuffer の Drop が呼ばれる
+            self.meshes.clear();
 
             self.sync.destroy(&self.context.device);
             self.pipeline.destroy(&self.context.device);

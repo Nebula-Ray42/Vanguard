@@ -29,31 +29,12 @@ ConstantBuffer<PushConstants> push;
 VertexOutput vertexMain(VertexInput input) {
     VertexOutput output;
 
-    // 約30度（0.5ラジアン）傾ける
-    float angle = 0.5;
-    float c = cos(angle);
-    float s = sin(angle);
+    // CPUから送られてきたMVP行列を使って頂点を正しく変換する
+    output.position = mul(float4(input.position, 1.0), push.mvp);
 
-    float3 p = input.position;
-    float3 n = input.normalDir;
-
-    // 1. Y軸回転（新しい変数 p1, n1 に計算結果を入れる）
-    float3 p1 = float3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
-    float3 n1 = float3(n.x * c + n.z * s, n.y, -n.x * s + n.z * c);
-
-    // 2. X軸回転（さらに新しい変数 p2, n2 に入れる）
-    float3 p2 = float3(p1.x, p1.y * c - p1.z * s, p1.y * s + p1.z * c);
-    float3 n2 = float3(n1.x, n1.y * c - n1.z * s, n1.y * s + n1.z * c);
-
-    // 3. 画面に収めるための補正（切り捨て回避）
-    p2.x *= 0.5; // 画面からはみ出ないように50%縮小
-    p2.y *= 0.5;
-    p2.z = p2.z * 0.5 + 0.5; // Z値を -0.5〜0.5 から 0.25〜0.75 に移動させ、安全圏に入れる
-
-    // 計算結果を出力
-    output.position = float4(p2, 1.0);
+    // 色と向き（法線）はそのまま後ろへ受け渡す
     output.color = input.color;
-    output.normalDir = n2;
+    output.normalDir = input.normalDir;
 
     return output;
 }
