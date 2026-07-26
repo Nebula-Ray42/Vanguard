@@ -212,7 +212,6 @@ impl VulkanRenderer {
         // カメラ行列の計算
         // カメラ行列の計算
         let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
-        // 🔍 罠1チェック: ここが NaN や 0 になっていないか確認
         info!("画面アスペクト比: {}", aspect);
 
         let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 1000.0); // 🔴 Zの限界を 100.0 から 1000.0 に伸ばす
@@ -221,7 +220,6 @@ impl VulkanRenderer {
         vulkan_clip[(2, 2)] = 0.5;
         vulkan_clip[(2, 3)] = 0.5;
 
-        // 🔍 罠2対策: オブジェクトが巨大すぎた場合に備え、カメラを「上20、手前50」まで思いっきり下げる
         let eye = nalgebra::Point3::new(0.0, 20.0, 50.0);
         let target = nalgebra::Point3::new(0.0, 0.0, 0.0);
         let up = nalgebra::Vector3::y();
@@ -232,19 +230,11 @@ impl VulkanRenderer {
         for (i, instance) in snapshot.instances.iter().enumerate() {
             let mut mvp = view_proj * instance.transform;
 
-            // 🔍 最終結果チェック: NaN（非数）が混じっていないか確認
             if i == 0 {
                 info!("最終MVP行列:\n{:.2}", mvp);
             }
 
-            // ========================================================
-            // 🚨 罠3対策: 行列の転置（Transpose）
-            // ========================================================
-            // もしシェーダー（.vert）の計算とRustのメモリ配列の縦横が逆だった場合、
-            // これを有効にすると一発で直ります。
-            // ※ もし今回の実行でダメだったら、次の実行でこのコメントアウトを外して試してください！
              mvp = mvp.transpose();
-            // ========================================================
 
             let mvp_slice = mvp.as_slice();
             let bytes = unsafe {
