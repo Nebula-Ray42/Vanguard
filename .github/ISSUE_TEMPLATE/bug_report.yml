@@ -1,0 +1,55 @@
+name: "Bug Report"
+description: Create a report to help us improve the engine.
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what happened...
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: e.g., Windows 11, Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU / Graphics Card
+      placeholder: e.g., NVIDIA RTX 4070, AMD RX 7800 XT
+    validations:
+      required: true
+  - type: input
+    id: vulkan
+    attributes:
+      label: Vulkan Driver / SDK Version
+      placeholder: e.g., v1.3.268
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How did you encounter the bug?
+      placeholder: |
+        1. Run `cargo run --example toon_surf`
+        2. Do something...
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Vulkan Validation Logs / Error Messages
+      description: Paste any console output, crash logs, or Validation Layer errors here.
+      render: shell
