@@ -5,7 +5,7 @@ use render_api::render_pass_error::RenderPassError;
 use render_api::swapchain::SwapchainError;
 
 // ※ 内部のエラー伝播用にインポート
-use crate::infra::context::VulkanContext;
+use crate::vulkan::context::VulkanContext;
 use render_api::engine_error::EngineError;
 
 /// スワップチェーンのライフサイクルと画面更新を管理する構造体 (Layer 2)

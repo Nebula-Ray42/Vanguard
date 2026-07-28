@@ -1,5 +1,6 @@
+// src/lib.rs
 mod buffer;
-pub mod infra;
+pub mod vulkan;
 pub mod render;
 pub mod scene;
 
@@ -9,16 +10,16 @@ use std::mem::{align_of, size_of, size_of_val};
 
 // infraフォルダの中から必要なものを引っ張ってくる
 use buffer::copy_buffer;
-use infra::context::{GpuBuffer, VulkanContext};
-use infra::pipeline::GraphicsPipeline;
-use infra::swapchain::SwapchainTarget;
-use infra::sync::SyncContext;
+use vulkan::context::{GpuBuffer, VulkanContext};
+use vulkan::pipeline::GraphicsPipeline;
+use vulkan::swapchain::SwapchainTarget;
+use vulkan::sync::SyncContext;
 use render::command::CommandRecorder;
 
 use nalgebra::Matrix4;
 use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
 
-use crate::infra::sync;
+use crate::vulkan::sync;
 use render_api::engine_error::EngineError;
 use tracing::info;
 
@@ -198,7 +199,7 @@ impl VulkanRenderer {
         let active_frame = match self.begin_frame()? {
             Some(frame) => frame,
             None => {
-                tracing::warn!("⚠️ begin_frame が None を返したため、描画をスキップしました");
+                tracing::warn!("begin_frame が None を返したため、描画をスキップしました");
                 return Ok(());
             }
         };
@@ -251,22 +252,16 @@ impl VulkanRenderer {
 
         // カメラ行列の計算
         // カメラ行列の計算
-        let aspect =
-            self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
-        info!("画面アスペクト比: {}", aspect);
+        let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
+        let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 1000.0);
 
-        let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 1000.0); // 🔴 Zの限界を 100.0 から 1000.0 に伸ばす
         let mut vulkan_clip = Matrix4::identity();
         vulkan_clip[(1, 1)] = -1.0;
         vulkan_clip[(2, 2)] = 0.5;
         vulkan_clip[(2, 3)] = 0.5;
 
-        let eye = nalgebra::Point3::new(0.0, 20.0, 50.0);
-        let target = nalgebra::Point3::new(0.0, 0.0, 0.0);
-        let up = nalgebra::Vector3::y();
-        let test_view_matrix = Matrix4::look_at_rh(&eye, &target, &up);
-
-        let view_proj = vulkan_clip * projection * test_view_matrix;
+        // ハードコードを削除し、snapshotからView行列を受け取る
+        let view_proj = vulkan_clip * projection * snapshot.view_matrix;
 
         for (i, instance) in snapshot.instances.iter().enumerate() {
             let mut mvp = view_proj * instance.transform;
