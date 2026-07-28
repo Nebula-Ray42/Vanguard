@@ -1,6 +1,6 @@
 // crates/renderer/src/command.rs
 
-use crate::infra::context::GpuBuffer;
+use crate::vulkan::context::GpuBuffer;
 use ash::vk;
 use render_api::engine_error::EngineError;
 
