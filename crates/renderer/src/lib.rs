@@ -3,6 +3,8 @@ mod buffer;
 pub mod vulkan;
 pub mod render;
 pub mod scene;
+pub mod descriptors;
+pub mod buffers;
 
 use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
