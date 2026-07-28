@@ -1,9 +1,9 @@
-use nalgebra::Matrix4;
-use slotmap::{new_key_type, SecondaryMap, SlotMap};
-use rapier3d::prelude::RigidBodyHandle;
 use crate::camera::Camera;
 use crate::physics::PhysicsWorld;
 use crate::scene::{Entity, EntityId, Scene};
+use nalgebra::Matrix4;
+use rapier3d::prelude::RigidBodyHandle;
+use slotmap::{SecondaryMap, SlotMap, new_key_type};
 
 new_key_type! {
     pub struct DynamicId;
@@ -17,11 +17,10 @@ pub struct GameState {
     // カメラの状態
     pub camera: Camera,
     // シーンの状態
-    pub scene: Scene
+    pub scene: Scene,
 }
 
 impl GameState {
-
     pub fn new() -> Self {
         Self {
             // SlotMapとSecondaryMapの初期化
@@ -39,8 +38,6 @@ impl GameState {
 
         // 1. 静的オブジェクト（目印のランドマーク）をリストに追加
         entities.extend(self.scene.entities.clone());
-
-
 
         // 2. 動的オブジェクト（物理演算の結果）をリストに追加
         // ※現状はメッシュ登録の都合上、全ての動的オブジェクトを暫定で EntityId(1) として扱う

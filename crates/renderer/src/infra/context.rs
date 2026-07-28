@@ -32,8 +32,9 @@ impl VulkanContext {
         window_handle: RawWindowHandle,
     ) -> Result<Self, EngineError> {
         let entry = unsafe {
-            Entry::load()
-                .map_err(|e| EngineError::Legacy(format!("Vulkan APIのロードに失敗しました: {}", e)))?
+            Entry::load().map_err(|e| {
+                EngineError::Legacy(format!("Vulkan APIのロードに失敗しました: {}", e))
+            })?
         };
 
         let app_name = CString::new("Rey Engine").unwrap();
@@ -45,7 +46,9 @@ impl VulkanContext {
             .api_version(vk::API_VERSION_1_3);
 
         let instance_extensions = ash_window::enumerate_required_extensions(display_handle)
-            .map_err(|e| EngineError::Legacy(format!("ウィンドウ拡張機能の取得に失敗しました: {}", e)))?
+            .map_err(|e| {
+                EngineError::Legacy(format!("ウィンドウ拡張機能の取得に失敗しました: {}", e))
+            })?
             .to_vec();
 
         let layer_names = [c"VK_LAYER_KHRONOS_validation".as_ptr()];
@@ -56,22 +59,24 @@ impl VulkanContext {
             .enabled_layer_names(&layer_names);
 
         let instance = unsafe {
-            entry
-                .create_instance(&create_info, None)
-                .map_err(|e| EngineError::Legacy(format!("Vulkan Instanceの生成に失敗しました: {}", e)))?
+            entry.create_instance(&create_info, None).map_err(|e| {
+                EngineError::Legacy(format!("Vulkan Instanceの生成に失敗しました: {}", e))
+            })?
         };
 
         let surface = unsafe {
             ash_window::create_surface(&entry, &instance, display_handle, window_handle, None)
-                .map_err(|e| EngineError::Legacy(format!("Vulkan Surfaceの生成に失敗しました: {}", e)))?
+                .map_err(|e| {
+                    EngineError::Legacy(format!("Vulkan Surfaceの生成に失敗しました: {}", e))
+                })?
         };
 
         let surface_loader = SurfaceLoader::new(&entry, &instance);
 
         let physical_devices = unsafe {
-            instance
-                .enumerate_physical_devices()
-                .map_err(|e| EngineError::Legacy(format!("物理デバイスの取得に失敗しました: {}", e)))?
+            instance.enumerate_physical_devices().map_err(|e| {
+                EngineError::Legacy(format!("物理デバイスの取得に失敗しました: {}", e))
+            })?
         };
 
         let (physical_device, queue_family_index) = physical_devices
@@ -93,7 +98,11 @@ impl VulkanContext {
                     }
                 })
             })
-            .ok_or_else(|| EngineError::Legacy("適合するGPUとキューファミリーが見つかりませんでした".to_string()))?;
+            .ok_or_else(|| {
+                EngineError::Legacy(
+                    "適合するGPUとキューファミリーが見つかりませんでした".to_string(),
+                )
+            })?;
 
         let queue_priorities = [1.0_f32];
         let queue_create_info = vk::DeviceQueueCreateInfo::default()
@@ -112,7 +121,9 @@ impl VulkanContext {
         let device = unsafe {
             instance
                 .create_device(physical_device, &device_create_info, None)
-                .map_err(|e| EngineError::Legacy(format!("論理デバイスの生成に失敗しました: {}", e)))?
+                .map_err(|e| {
+                    EngineError::Legacy(format!("論理デバイスの生成に失敗しました: {}", e))
+                })?
         };
 
         let graphics_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
@@ -143,7 +154,9 @@ impl VulkanContext {
                 return Ok(i);
             }
         }
-        Err(EngineError::Legacy("条件に適合するメモリタイプが見つかりませんでした".to_string()))
+        Err(EngineError::Legacy(
+            "条件に適合するメモリタイプが見つかりませんでした".to_string(),
+        ))
     }
 
     /// GPU上にバッファ（頂点データやインデックスデータ用）を確保します。
@@ -186,13 +199,17 @@ impl VulkanContext {
         let buffer_memory = unsafe {
             self.device
                 .allocate_memory(&alloc_info, None)
-                .map_err(|e| EngineError::Legacy(format!("バッファ用メモリの確保に失敗しました: {}", e)))?
+                .map_err(|e| {
+                    EngineError::Legacy(format!("バッファ用メモリの確保に失敗しました: {}", e))
+                })?
         };
 
         unsafe {
             self.device
                 .bind_buffer_memory(buffer, buffer_memory, 0)
-                .map_err(|e| EngineError::Legacy(format!("バッファとメモリのバインドに失敗しました: {}", e)))?;
+                .map_err(|e| {
+                    EngineError::Legacy(format!("バッファとメモリのバインドに失敗しました: {}", e))
+                })?;
         }
 
         Ok(GpuBuffer {

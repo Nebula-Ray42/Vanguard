@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
-pub mod physics;
-pub mod state;
 pub mod camera;
 pub mod input;
+pub mod physics;
 pub mod scene;
+pub mod state;
 
 use nalgebra::{UnitQuaternion, Vector3};
 use physics::PhysicsWorld;
@@ -32,7 +32,7 @@ impl Transform {
 pub struct GameState {
     pub physics: PhysicsWorld,
     pub cube_handle: RigidBodyHandle,
-    pub entities: ()
+    pub entities: (),
 }
 
 impl GameState {
@@ -40,7 +40,11 @@ impl GameState {
         let mut physics = PhysicsWorld::new();
         let cube_handle = physics.spawn_dynamic_cube(5.0);
 
-        Self { physics, cube_handle, entities: () }
+        Self {
+            physics,
+            cube_handle,
+            entities: (),
+        }
     }
 
     pub fn tick(&mut self) {

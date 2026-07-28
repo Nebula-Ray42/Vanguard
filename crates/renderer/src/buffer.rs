@@ -1,5 +1,5 @@
+use crate::infra::context::VulkanContext;
 use ash::vk;
-use crate::context::VulkanContext;
 use render_api::engine_error::EngineError;
 
 /// バッファ間のデータ転送（One-Time Submit）を同期的に実行します。
@@ -24,12 +24,14 @@ pub fn copy_buffer(
         context
             .device
             .allocate_command_buffers(&alloc_info)
-            .map_err(|e| EngineError::Legacy(format!("コマンドバッファの割り当てに失敗: {:?}", e)))?[0]
+            .map_err(|e| {
+                EngineError::Legacy(format!("コマンドバッファの割り当てに失敗: {:?}", e))
+            })?[0]
     };
 
     // 2. 記録開始設定
-    let begin_info = vk::CommandBufferBeginInfo::default()
-        .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
+    let begin_info =
+        vk::CommandBufferBeginInfo::default().flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
 
     unsafe {
         context

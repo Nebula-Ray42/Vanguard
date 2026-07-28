@@ -23,7 +23,11 @@ impl SyncContext {
     ///
     /// # Errors
     /// セマフォ、フェンス、コマンドプール、またはコマンドバッファの生成に失敗した場合に `EngineError` を返します。
-    pub fn new(device: &Device, queue_family_index: u32, image_count: u32) -> Result<Self, EngineError> {
+    pub fn new(
+        device: &Device,
+        queue_family_index: u32,
+        image_count: u32,
+    ) -> Result<Self, EngineError> {
         let semaphore_info = vk::SemaphoreCreateInfo::default();
         let fence_info = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
 
@@ -34,12 +38,16 @@ impl SyncContext {
         for _ in 0..MAX_FRAMES_IN_FLIGHT {
             // FFI呼び出しのみを unsafe にし、エラー時は安全に中断
             let sem = unsafe {
-                device.create_semaphore(&semaphore_info, None)
-                    .map_err(|e| EngineError::Legacy(format!("image_available セマフォの作成に失敗: {}", e)))?
+                device
+                    .create_semaphore(&semaphore_info, None)
+                    .map_err(|e| {
+                        EngineError::Legacy(format!("image_available セマフォの作成に失敗: {}", e))
+                    })?
             };
             let fence = unsafe {
-                device.create_fence(&fence_info, None)
-                    .map_err(|e| EngineError::Legacy(format!("in_flight フェンスの作成に失敗: {}", e)))?
+                device.create_fence(&fence_info, None).map_err(|e| {
+                    EngineError::Legacy(format!("in_flight フェンスの作成に失敗: {}", e))
+                })?
             };
 
             image_available_semaphores.push(sem);
@@ -49,8 +57,11 @@ impl SyncContext {
         let mut render_finished_semaphores = Vec::with_capacity(image_count as usize);
         for _ in 0..image_count {
             let sem = unsafe {
-                device.create_semaphore(&semaphore_info, None)
-                    .map_err(|e| EngineError::Legacy(format!("render_finished セマフォの作成に失敗: {}", e)))?
+                device
+                    .create_semaphore(&semaphore_info, None)
+                    .map_err(|e| {
+                        EngineError::Legacy(format!("render_finished セマフォの作成に失敗: {}", e))
+                    })?
             };
             render_finished_semaphores.push(sem);
         }
@@ -60,7 +71,8 @@ impl SyncContext {
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER);
 
         let command_pool = unsafe {
-            device.create_command_pool(&pool_info, None)
+            device
+                .create_command_pool(&pool_info, None)
                 .map_err(|e| EngineError::Legacy(format!("コマンドプールの作成に失敗: {}", e)))?
         };
 
@@ -70,8 +82,9 @@ impl SyncContext {
             .command_buffer_count(MAX_FRAMES_IN_FLIGHT as u32);
 
         let command_buffers = unsafe {
-            device.allocate_command_buffers(&alloc_info)
-                .map_err(|e| EngineError::Legacy(format!("コマンドバッファの割り当てに失敗: {}", e)))?
+            device.allocate_command_buffers(&alloc_info).map_err(|e| {
+                EngineError::Legacy(format!("コマンドバッファの割り当てに失敗: {}", e))
+            })?
         };
 
         Ok(Self {

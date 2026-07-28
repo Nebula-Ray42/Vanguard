@@ -1,0 +1,19 @@
+namespace rey_engine.schema;
+
+struct Transform {
+    matrix: [float: 16];
+}
+
+// 描画される1つのエンティティ（キューブなど）のデータ
+table RenderInstance {
+    entity_id: uint32;
+    mesh_id: uint32;
+    transform: Transform;
+}
+
+// Coreが計算を終え、Rendererに渡す1フレーム分の全データ
+table FrameSnapshot {
+    instances: [RenderInstance];
+}
+
+root_type FrameSnapshot;

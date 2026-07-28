@@ -3,13 +3,13 @@ use render_api::{EntityId, MeshData, RenderInstance, RenderRegistry, RenderSnaps
 use renderer::VulkanRenderer;
 use std::thread;
 use std::time::{Duration, Instant};
+use tracing::{error, info};
 use winit::{
     event::{DeviceEvent, ElementState, Event, WindowEvent},
     event_loop::EventLoop,
     keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowBuilder},
 };
-use tracing::{info, error};
 
 use core::input::InputState;
 use core::state::GameState;
@@ -30,7 +30,8 @@ fn setup_engine() -> (EventLoop<()>, Window, VulkanRenderer) {
         window.window_handle().unwrap().as_raw(),
         1280,
         720,
-    ).expect("Vulkanレンダラーの初期化に失敗しました");
+    )
+    .expect("Vulkanレンダラーの初期化に失敗しました");
 
     (event_loop, window, renderer)
 }
@@ -101,10 +102,14 @@ fn main() {
     // B. メッシュ生成と登録
     // ---------------------------------------------------------
     let floor_data = MeshData::new_plane(50.0, 50.0, [0.6, 0.6, 0.6]);
-    let floor_mesh_id = renderer.create_mesh_from_data(&floor_data).expect("床メッシュの生成に失敗しました");
+    let floor_mesh_id = renderer
+        .create_mesh_from_data(&floor_data)
+        .expect("床メッシュの生成に失敗しました");
 
     let cube_data = MeshData::new_cube(1.0, [1.0, 0.2, 0.2]);
-    let cube_mesh_id = renderer.create_mesh_from_data(&cube_data).expect("キューブメッシュの生成に失敗しました");
+    let cube_mesh_id = renderer
+        .create_mesh_from_data(&cube_data)
+        .expect("キューブメッシュの生成に失敗しました");
 
     registry.register_entity(EntityId(0), floor_mesh_id); // 床
 
@@ -118,7 +123,7 @@ fn main() {
     // C. メインループ用タイマー変数の初期化
     // ---------------------------------------------------------
     let mut last_frame_time = Instant::now();
-    let target_frame_duration = Duration::from_secs_f32(1.0 / 60.0);
+    let target_frame_duration = Duration::from_secs_f32(1.0 / 144.0);
 
     info!("Rey Engine started. Running at 60 FPS...");
 
@@ -128,7 +133,10 @@ fn main() {
     event_loop
         .run(move |event, elwt| {
             match event {
-                Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => {
                     info!("Shutting down Rey Engine...");
                     if let Some(r) = renderer_opt.take() {
                         drop(r);
@@ -136,12 +144,21 @@ fn main() {
                     elwt.exit();
                 }
 
-                Event::DeviceEvent { event: DeviceEvent::MouseMotion { delta }, .. } => {
+                Event::DeviceEvent {
+                    event: DeviceEvent::MouseMotion { delta },
+                    ..
+                } => {
                     input_state.mouse_dx += delta.0 as f32;
                     input_state.mouse_dy += delta.1 as f32;
                 }
 
-                Event::WindowEvent { event: WindowEvent::KeyboardInput { event: key_event, .. }, .. } => {
+                Event::WindowEvent {
+                    event:
+                        WindowEvent::KeyboardInput {
+                            event: key_event, ..
+                        },
+                    ..
+                } => {
                     let is_pressed = key_event.state == ElementState::Pressed;
                     if let PhysicalKey::Code(keycode) = key_event.physical_key {
                         match keycode {
@@ -174,7 +191,10 @@ fn main() {
                     }
                 }
 
-                Event::WindowEvent { event: WindowEvent::RedrawRequested, .. } => {
+                Event::WindowEvent {
+                    event: WindowEvent::RedrawRequested,
+                    ..
+                } => {
                     let snapshot = build_render_snapshot(&game_state, &registry);
 
                     if let Some(r) = renderer_opt.as_mut() {

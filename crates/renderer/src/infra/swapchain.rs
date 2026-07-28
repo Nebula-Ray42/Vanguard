@@ -1,11 +1,11 @@
 // crates/renderer/src/swapchain.rs
-use crate::context::VulkanContext;
 use ash::khr::swapchain::Device as SwapchainLoader;
 use ash::{Device, vk};
 use render_api::render_pass_error::RenderPassError;
 use render_api::swapchain::SwapchainError;
 
 // ※ 内部のエラー伝播用にインポート
+use crate::infra::context::VulkanContext;
 use render_api::engine_error::EngineError;
 
 /// スワップチェーンのライフサイクルと画面更新を管理する構造体 (Layer 2)
@@ -57,13 +57,9 @@ impl SwapchainTarget {
             .map_err(SwapchainError::CreateRenderPass)?;
 
         // 5. Framebufferの生成
-        let framebuffers = Self::create_framebuffers(
-            context,
-            render_pass,
-            extent,
-            &image_views,
-            depth_image_view,
-        ).map_err(|e| SwapchainError::CreateFramebuffer(e.to_string()))?;
+        let framebuffers =
+            Self::create_framebuffers(context, render_pass, extent, &image_views, depth_image_view)
+                .map_err(|e| SwapchainError::CreateFramebuffer(e.to_string()))?;
 
         Ok(Self {
             loader,
@@ -105,15 +101,23 @@ impl SwapchainTarget {
             caps.current_extent
         } else {
             vk::Extent2D {
-                width: requested.0.clamp(caps.min_image_extent.width, caps.max_image_extent.width),
-                height: requested.1.clamp(caps.min_image_extent.height, caps.max_image_extent.height),
+                width: requested
+                    .0
+                    .clamp(caps.min_image_extent.width, caps.max_image_extent.width),
+                height: requested
+                    .1
+                    .clamp(caps.min_image_extent.height, caps.max_image_extent.height),
             }
         }
     }
 
     fn compute_image_count(caps: &vk::SurfaceCapabilitiesKHR) -> u32 {
         let wanted = caps.min_image_count + 1;
-        if caps.max_image_count > 0 { wanted.min(caps.max_image_count) } else { wanted }
+        if caps.max_image_count > 0 {
+            wanted.min(caps.max_image_count)
+        } else {
+            wanted
+        }
     }
 
     fn create_swapchain(
@@ -123,22 +127,26 @@ impl SwapchainTarget {
         height: u32,
     ) -> Result<(vk::SwapchainKHR, vk::Format, vk::Extent2D), SwapchainError> {
         let caps = unsafe {
-            context.surface_loader
+            context
+                .surface_loader
                 .get_physical_device_surface_capabilities(context.physical_device, context.surface)
                 .map_err(SwapchainError::QueryCapabilities)?
         };
         let formats = unsafe {
-            context.surface_loader
+            context
+                .surface_loader
                 .get_physical_device_surface_formats(context.physical_device, context.surface)
                 .map_err(SwapchainError::QueryFormats)?
         };
         let present_modes = unsafe {
-            context.surface_loader
+            context
+                .surface_loader
                 .get_physical_device_surface_present_modes(context.physical_device, context.surface)
                 .map_err(SwapchainError::QueryPresentModes)?
         };
 
-        let format = Self::select_surface_format(&formats).ok_or(SwapchainError::NoFormatsAvailable)?;
+        let format =
+            Self::select_surface_format(&formats).ok_or(SwapchainError::NoFormatsAvailable)?;
         let present_mode = Self::select_present_mode(&present_modes);
         let extent = Self::compute_extent(&caps, (width, height));
         let image_count = Self::compute_image_count(&caps);
@@ -158,7 +166,9 @@ impl SwapchainTarget {
             .clipped(true);
 
         let swapchain = unsafe {
-            loader.create_swapchain(&create_info, None).map_err(SwapchainError::CreateSwapchain)?
+            loader
+                .create_swapchain(&create_info, None)
+                .map_err(SwapchainError::CreateSwapchain)?
         };
 
         Ok((swapchain, format.format, extent))
@@ -204,7 +214,11 @@ impl SwapchainTarget {
 
         let image_info = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
-            .extent(vk::Extent3D { width: extent.width, height: extent.height, depth: 1 })
+            .extent(vk::Extent3D {
+                width: extent.width,
+                height: extent.height,
+                depth: 1,
+            })
             .mip_levels(1)
             .array_layers(1)
             .format(depth_format)
@@ -215,12 +229,18 @@ impl SwapchainTarget {
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
 
         let depth_image = unsafe {
-            context.device.create_image(&image_info, None)
+            context
+                .device
+                .create_image(&image_info, None)
                 .map_err(|e| EngineError::Legacy(format!("Depth Image生成失敗: {}", e)))?
         };
 
         let mem_reqs = unsafe { context.device.get_image_memory_requirements(depth_image) };
-        let mem_props = unsafe { context.instance.get_physical_device_memory_properties(context.physical_device) };
+        let mem_props = unsafe {
+            context
+                .instance
+                .get_physical_device_memory_properties(context.physical_device)
+        };
 
         // 先ほど EngineError 対応した find_memory_type なので、そのまま ? で伝播できる
         let mem_type_index = VulkanContext::find_memory_type(
@@ -234,12 +254,16 @@ impl SwapchainTarget {
             .memory_type_index(mem_type_index);
 
         let depth_image_memory = unsafe {
-            context.device.allocate_memory(&alloc_info, None)
+            context
+                .device
+                .allocate_memory(&alloc_info, None)
                 .map_err(|e| EngineError::Legacy(format!("Depth メモリ確保失敗: {}", e)))?
         };
 
         unsafe {
-            context.device.bind_image_memory(depth_image, depth_image_memory, 0)
+            context
+                .device
+                .bind_image_memory(depth_image, depth_image_memory, 0)
                 .map_err(|e| EngineError::Legacy(format!("Depth メモリバインド失敗: {}", e)))?
         };
 
@@ -256,11 +280,18 @@ impl SwapchainTarget {
             });
 
         let depth_image_view = unsafe {
-            context.device.create_image_view(&view_info, None)
+            context
+                .device
+                .create_image_view(&view_info, None)
                 .map_err(|e| EngineError::Legacy(format!("Depth ImageView生成失敗: {}", e)))?
         };
 
-        Ok((depth_format, depth_image, depth_image_memory, depth_image_view))
+        Ok((
+            depth_format,
+            depth_image,
+            depth_image_memory,
+            depth_image_view,
+        ))
     }
 
     fn create_render_pass(
@@ -312,7 +343,7 @@ impl SwapchainTarget {
             .src_access_mask(vk::AccessFlags::empty())
             .dst_access_mask(
                 vk::AccessFlags::COLOR_ATTACHMENT_WRITE
-                    | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE
+                    | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE,
             );
 
         let attachments = [color_attachment, depth_attachment];
@@ -322,7 +353,9 @@ impl SwapchainTarget {
             .dependencies(std::slice::from_ref(&dependency));
 
         unsafe {
-            context.device.create_render_pass(&render_pass_info, None)
+            context
+                .device
+                .create_render_pass(&render_pass_info, None)
                 .map_err(RenderPassError::CreateFailed)
         }
     }
@@ -345,7 +378,9 @@ impl SwapchainTarget {
                     .height(extent.height)
                     .layers(1);
                 unsafe {
-                    context.device.create_framebuffer(&fb_info, None)
+                    context
+                        .device
+                        .create_framebuffer(&fb_info, None)
                         .map_err(|e| EngineError::Legacy(format!("Framebuffer生成失敗: {}", e)))
                 }
             })

@@ -1,7 +1,7 @@
 use ash::{Device, vk};
 use std::ffi::CString;
-use crate::mesh::{get_attribute_descriptions, get_vertex_binding_description};
 
+use crate::scene::mesh::{get_attribute_descriptions, get_vertex_binding_description};
 use render_api::engine_error::EngineError;
 
 // =====================================================================
@@ -88,19 +88,18 @@ impl<'a> PipelineBuilder<'a> {
         render_pass: vk::RenderPass,
     ) -> Result<vk::Pipeline, EngineError> {
         if self.pipeline_layout == vk::PipelineLayout::null() {
-            return Err(EngineError::Legacy("Pipeline Layout が設定されていません".to_string()));
+            return Err(EngineError::Legacy(
+                "Pipeline Layout が設定されていません".to_string(),
+            ));
         }
 
         let color_blend_info = vk::PipelineColorBlendStateCreateInfo::default()
             .logic_op_enable(false)
             .attachments(std::slice::from_ref(&self.color_blend_attachment));
 
-        let dynamic_states = [
-            vk::DynamicState::VIEWPORT,
-            vk::DynamicState::SCISSOR,
-        ];
-        let dynamic_state_info = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_states = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
+        let dynamic_state_info =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
 
         let pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&self.shader_stages)
@@ -142,15 +141,19 @@ pub struct GraphicsPipeline {
 fn create_shader_module(device: &Device, code: &[u8]) -> Result<vk::ShaderModule, EngineError> {
     let mut cursor = std::io::Cursor::new(code);
 
-    let decoded = ash::util::read_spv(&mut cursor)
-        .map_err(|e| EngineError::Legacy(format!("シェーダーコードのパースに失敗しました: {:?}", e)))?;
+    let decoded = ash::util::read_spv(&mut cursor).map_err(|e| {
+        EngineError::Legacy(format!("シェーダーコードのパースに失敗しました: {:?}", e))
+    })?;
 
     let create_info = vk::ShaderModuleCreateInfo::default().code(&decoded);
 
     // FFI呼び出しのみを unsafe ブロックに隔離
     unsafe {
-        device.create_shader_module(&create_info, None)
-            .map_err(|e| EngineError::Legacy(format!("シェーダーモジュールの生成に失敗しました: {:?}", e)))
+        device
+            .create_shader_module(&create_info, None)
+            .map_err(|e| {
+                EngineError::Legacy(format!("シェーダーモジュールの生成に失敗しました: {:?}", e))
+            })
     }
 }
 
@@ -162,14 +165,15 @@ impl GraphicsPipeline {
         extent: vk::Extent2D,
     ) -> Result<Self, EngineError> {
         // シェーダーの読み込み
-        let vert_spv = include_bytes!("../../../assets/shaders/main_vert.spv");
-        let frag_spv = include_bytes!("../../../assets/shaders/main_frag.spv");
+        let vert_spv = include_bytes!("../../../../assets/shaders/main_vert.spv");
+        let frag_spv = include_bytes!("../../../../assets/shaders/main_frag.spv");
 
         let vert_module = create_shader_module(device, vert_spv)?;
         let frag_module = create_shader_module(device, frag_spv)?;
 
         // CString::new はハードコードされた文字列("main")のため、失敗しないことが保証されている
-        let main_name = CString::new("main").expect("C文字列の変換に失敗(Null文字が含まれています)");
+        let main_name =
+            CString::new("main").expect("C文字列の変換に失敗(Null文字が含まれています)");
 
         let shader_stages = vec![
             vk::PipelineShaderStageCreateInfo::default()
@@ -212,8 +216,8 @@ impl GraphicsPipeline {
             .offset(0)
             .size(size_of::<[f32; 16]>() as u32)];
 
-        let layout_info = vk::PipelineLayoutCreateInfo::default()
-            .push_constant_ranges(&push_constant_ranges);
+        let layout_info =
+            vk::PipelineLayoutCreateInfo::default().push_constant_ranges(&push_constant_ranges);
 
         let layout = unsafe {
             device

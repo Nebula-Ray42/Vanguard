@@ -34,13 +34,12 @@ pub struct Scene {
 impl Scene {
     pub fn create_test_scene() -> Self {
         let positions = [
-            Vector3::new(0.0, 0.0, 0.0),    // 中央 (原点)
-            Vector3::new(5.0, 0.0, 0.0),    // 右
-            Vector3::new(-5.0, 0.0, 0.0),   // 左
-            Vector3::new(0.0, 0.0, -5.0),   // 奥
-            Vector3::new(0.0, 0.0, 5.0),    // 手前
+            Vector3::new(0.0, 0.0, 0.0),  // 中央 (原点)
+            Vector3::new(5.0, 0.0, 0.0),  // 右
+            Vector3::new(-5.0, 0.0, 0.0), // 左
+            Vector3::new(0.0, 0.0, -5.0), // 奥
+            Vector3::new(0.0, 0.0, 5.0),  // 手前
         ];
-        
 
         let entities = positions
             .into_iter()

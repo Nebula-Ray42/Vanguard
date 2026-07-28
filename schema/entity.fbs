@@ -1,0 +1,34 @@
+// sharedクレートなどの名前空間に合わせておくと後で便利です
+namespace engine_data;
+
+struct Vec3 {
+  x: float32;
+  y: float32;
+  z: float32;
+}
+
+struct Vec4 {
+  x: float32;
+  y: float32;
+  z: float32;
+  w: float32;
+}
+
+table Transform {
+  position: Vec3;
+  rotation: Vec4; // Vec3 から Vec4（クォータニオン用）に変更
+  scale: Vec3;
+}
+
+table Entity {
+  id: uint32;
+  mesh_id: uint32;
+  transform: Transform;
+}
+
+table Scene {
+  entities: [Entity];
+}
+
+// FlatBuffersは起点となる root_type の指定が必須です
+root_type Scene;

@@ -1,27 +1,26 @@
-pub mod buffer;
-pub mod context;
-mod mesh;
-mod pipeline;
-mod swapchain;
-mod sync;
-pub mod command;
-pub mod shader;
+mod buffer;
+pub mod infra;
+pub mod render;
+pub mod scene;
 
 use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::mem::{align_of, size_of, size_of_val};
 
+// infraフォルダの中から必要なものを引っ張ってくる
 use buffer::copy_buffer;
-use context::{VulkanContext, GpuBuffer};
-use nalgebra::Matrix4;
-use pipeline::GraphicsPipeline;
-use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
-use swapchain::SwapchainTarget;
-use sync::SyncContext;
-use command::CommandRecorder;
+use infra::context::{GpuBuffer, VulkanContext};
+use infra::pipeline::GraphicsPipeline;
+use infra::swapchain::SwapchainTarget;
+use infra::sync::SyncContext;
+use render::command::CommandRecorder;
 
-use tracing::info;
+use nalgebra::Matrix4;
+use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
+
+use crate::infra::sync;
 use render_api::engine_error::EngineError;
+use tracing::info;
 
 /// GPUに転送済みのメッシュデータ
 pub struct GpuMesh {
@@ -64,13 +63,13 @@ impl VulkanRenderer {
                 .position(|(i, info)| {
                     info.queue_flags.contains(vk::QueueFlags::GRAPHICS)
                         && context
-                        .surface_loader
-                        .get_physical_device_surface_support(
-                            context.physical_device,
-                            i as u32,
-                            context.surface,
-                        )
-                        .unwrap_or(false)
+                            .surface_loader
+                            .get_physical_device_surface_support(
+                                context.physical_device,
+                                i as u32,
+                                context.surface,
+                            )
+                            .unwrap_or(false)
                 })
                 .unwrap() as u32
         };
@@ -104,8 +103,18 @@ impl VulkanRenderer {
         )?;
 
         unsafe {
-            let data_ptr = self.context.device.map_memory(v_staging.memory, 0, vertex_size, vk::MemoryMapFlags::empty()).unwrap();
-            let mut align = ash::util::Align::new(data_ptr, align_of::<Vertex>() as u64, vertex_size);
+            let data_ptr = self
+                .context
+                .device
+                .map_memory(
+                    v_staging.memory,
+                    0,
+                    vertex_size,
+                    vk::MemoryMapFlags::empty(),
+                )
+                .unwrap();
+            let mut align =
+                ash::util::Align::new(data_ptr, align_of::<Vertex>() as u64, vertex_size);
             align.copy_from_slice(&data.vertices);
             self.context.device.unmap_memory(v_staging.memory);
         }
@@ -116,7 +125,13 @@ impl VulkanRenderer {
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
 
-        copy_buffer(&self.context, self.sync.command_pool, v_staging.buffer, vertex_buffer.buffer, vertex_size)?;
+        copy_buffer(
+            &self.context,
+            self.sync.command_pool,
+            v_staging.buffer,
+            vertex_buffer.buffer,
+            vertex_size,
+        )?;
 
         // --- 2. インデックスバッファの作成と転送 ---
         let index_size = (data.indices.len() * size_of::<u32>()) as vk::DeviceSize;
@@ -128,19 +143,32 @@ impl VulkanRenderer {
         )?;
 
         unsafe {
-            let data_ptr = self.context.device.map_memory(i_staging.memory, 0, index_size, vk::MemoryMapFlags::empty()).unwrap();
+            let data_ptr = self
+                .context
+                .device
+                .map_memory(i_staging.memory, 0, index_size, vk::MemoryMapFlags::empty())
+                .unwrap();
             let mut align = ash::util::Align::new(data_ptr, align_of::<u32>() as u64, index_size);
             align.copy_from_slice(&data.indices);
             self.context.device.unmap_memory(i_staging.memory);
         }
 
-        let index_buffer = self.context.create_buffer(
+        let index_buffer = self
+            .context
+            .create_buffer(
+                index_size,
+                vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
+                vk::MemoryPropertyFlags::DEVICE_LOCAL,
+            )?
+            .with_index_type(vk::IndexType::UINT32);
+
+        copy_buffer(
+            &self.context,
+            self.sync.command_pool,
+            i_staging.buffer,
+            index_buffer.buffer,
             index_size,
-            vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
-            vk::MemoryPropertyFlags::DEVICE_LOCAL,
-        )?.with_index_type(vk::IndexType::UINT32);
-        
-        copy_buffer(&self.context, self.sync.command_pool, i_staging.buffer, index_buffer.buffer, index_size)?;
+        )?;
 
         // --- 3. メッシュを登録してIDを返す ---
         let mesh_id = MeshId(self.meshes.len() as u32);
@@ -160,7 +188,10 @@ impl VulkanRenderer {
     /// # Errors
     /// フレームの取得、描画コマンドの記録、または送信に失敗した場合に `EngineError` を返します。
     pub fn draw_frame(&self, snapshot: &RenderSnapshot) -> Result<(), EngineError> {
-        tracing::trace!("描画リクエスト: {} 個のインスタンス", snapshot.instances.len());
+        tracing::trace!(
+            "描画リクエスト: {} 個のインスタンス",
+            snapshot.instances.len()
+        );
         info!("描画対象のインスタンス数: {}", snapshot.instances.len());
 
         // 1. フレームの開始（エラーが起きたら `?` で即座に返す）
@@ -177,8 +208,17 @@ impl VulkanRenderer {
 
         let clear_values = [
             // R: 0.0, G: 0.0, B: 1.0, A: 1.0 で真っ青に設定
-            vk::ClearValue { color: vk::ClearColorValue { float32: [0.0, 0.0, 1.0, 1.0] } },
-            vk::ClearValue { depth_stencil: vk::ClearDepthStencilValue { depth: 1.0, stencil: 0 } },
+            vk::ClearValue {
+                color: vk::ClearColorValue {
+                    float32: [0.0, 0.0, 1.0, 1.0],
+                },
+            },
+            vk::ClearValue {
+                depth_stencil: vk::ClearDepthStencilValue {
+                    depth: 1.0,
+                    stencil: 0,
+                },
+            },
         ];
 
         let render_pass_begin_info = vk::RenderPassBeginInfo::default()
@@ -186,7 +226,7 @@ impl VulkanRenderer {
             .framebuffer(self.swapchain_target.framebuffers[active_frame.image_index as usize])
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: self.swapchain_target.extent
+                extent: self.swapchain_target.extent,
             })
             .clear_values(&clear_values);
 
@@ -211,7 +251,8 @@ impl VulkanRenderer {
 
         // カメラ行列の計算
         // カメラ行列の計算
-        let aspect = self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
+        let aspect =
+            self.swapchain_target.extent.width as f32 / self.swapchain_target.extent.height as f32;
         info!("画面アスペクト比: {}", aspect);
 
         let projection = Matrix4::new_perspective(aspect, std::f32::consts::FRAC_PI_4, 0.1, 1000.0); // 🔴 Zの限界を 100.0 から 1000.0 に伸ばす
@@ -234,7 +275,7 @@ impl VulkanRenderer {
                 info!("最終MVP行列:\n{:.2}", mvp);
             }
 
-             mvp = mvp.transpose();
+            mvp = mvp.transpose();
 
             let mvp_slice = mvp.as_slice();
             let bytes = unsafe {
@@ -250,7 +291,6 @@ impl VulkanRenderer {
                 recorder.draw_indexed(gpu_mesh.index_count, 1, 0, 0, 0);
             }
         }
-
 
         recorder.end_render_pass();
 
@@ -274,7 +314,9 @@ impl VulkanRenderer {
         let frame = self.sync.current_frame.get();
 
         unsafe {
-            self.context.device.wait_for_fences(&[self.sync.in_flight_fences[frame]], true, u64::MAX)
+            self.context
+                .device
+                .wait_for_fences(&[self.sync.in_flight_fences[frame]], true, u64::MAX)
                 .map_err(|e| EngineError::Legacy(format!("Fenceの待機に失敗: {:?}", e)))?;
         }
 
@@ -294,19 +336,29 @@ impl VulkanRenderer {
         };
 
         unsafe {
-            self.context.device.reset_fences(&[self.sync.in_flight_fences[frame]])
+            self.context
+                .device
+                .reset_fences(&[self.sync.in_flight_fences[frame]])
                 .map_err(|e| EngineError::Legacy(format!("Fenceのリセットに失敗: {:?}", e)))?;
         }
 
         let command_buffer = self.sync.command_buffers[frame];
 
         unsafe {
-            self.context.device.reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty())
-                .map_err(|e| EngineError::Legacy(format!("コマンドバッファのリセットに失敗: {:?}", e)))?;
+            self.context
+                .device
+                .reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty())
+                .map_err(|e| {
+                    EngineError::Legacy(format!("コマンドバッファのリセットに失敗: {:?}", e))
+                })?;
 
             let begin_info = vk::CommandBufferBeginInfo::default();
-            self.context.device.begin_command_buffer(command_buffer, &begin_info)
-                .map_err(|e| EngineError::Legacy(format!("コマンドバッファの記録開始に失敗: {:?}", e)))?;
+            self.context
+                .device
+                .begin_command_buffer(command_buffer, &begin_info)
+                .map_err(|e| {
+                    EngineError::Legacy(format!("コマンドバッファの記録開始に失敗: {:?}", e))
+                })?;
         }
 
         let recorder = CommandRecorder::new(&self.context.device, command_buffer);
@@ -327,14 +379,19 @@ impl VulkanRenderer {
     /// GPUへのキュー送信、または画面への表示要求に失敗した場合に `EngineError` を返します。
     pub fn end_frame(&self, active_frame: ActiveFrame) -> Result<(), EngineError> {
         unsafe {
-            self.context.device.end_command_buffer(active_frame.recorder.command_buffer)
-                .map_err(|e| EngineError::Legacy(format!("コマンドバッファの終了に失敗: {:?}", e)))?;
+            self.context
+                .device
+                .end_command_buffer(active_frame.recorder.command_buffer)
+                .map_err(|e| {
+                    EngineError::Legacy(format!("コマンドバッファの終了に失敗: {:?}", e))
+                })?;
         }
 
         let wait_semaphores = [self.sync.image_available_semaphores[active_frame.frame_index]];
         let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
         let command_buffers_submit = [active_frame.recorder.command_buffer];
-        let signal_semaphores = [self.sync.render_finished_semaphores[active_frame.image_index as usize]];
+        let signal_semaphores =
+            [self.sync.render_finished_semaphores[active_frame.image_index as usize]];
 
         let submit_info = vk::SubmitInfo::default()
             .wait_semaphores(&wait_semaphores)
@@ -343,11 +400,14 @@ impl VulkanRenderer {
             .signal_semaphores(&signal_semaphores);
 
         unsafe {
-            self.context.device.queue_submit(
-                self.context.graphics_queue,
-                &[submit_info],
-                self.sync.in_flight_fences[active_frame.frame_index]
-            ).map_err(|e| EngineError::Legacy(format!("キューの送信に失敗: {:?}", e)))?;
+            self.context
+                .device
+                .queue_submit(
+                    self.context.graphics_queue,
+                    &[submit_info],
+                    self.sync.in_flight_fences[active_frame.frame_index],
+                )
+                .map_err(|e| EngineError::Legacy(format!("キューの送信に失敗: {:?}", e)))?;
         }
 
         let swapchains = [self.swapchain_target.swapchain];
@@ -358,10 +418,15 @@ impl VulkanRenderer {
             .image_indices(&image_indices);
 
         unsafe {
-            let _ = self.swapchain_target.loader.queue_present(self.context.graphics_queue, &present_info);
+            let _ = self
+                .swapchain_target
+                .loader
+                .queue_present(self.context.graphics_queue, &present_info);
         }
 
-        self.sync.current_frame.set((active_frame.frame_index + 1) % sync::MAX_FRAMES_IN_FLIGHT);
+        self.sync
+            .current_frame
+            .set((active_frame.frame_index + 1) % sync::MAX_FRAMES_IN_FLIGHT);
 
         Ok(())
     }

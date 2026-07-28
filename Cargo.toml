@@ -4,7 +4,8 @@ members = [
     "crates/core",
     "crates/render_api",
     "crates/renderer",
-    "crates/runner"
+    "crates/runner",
+    "crates/shared"
 ]
 
 resolver = "2"

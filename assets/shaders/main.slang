@@ -21,6 +21,18 @@ struct PushConstants {
     float4x4 mvp;
 };
 
+struct Transform {
+    float3 position;
+    float4 rotation;
+    float3 scale;
+}
+
+struct Entity {
+    uint32_t id;
+    uint32_t mesh_id;
+    Transform transform;
+}
+
 // VulkanのPush Constantとして受け取る宣言
 [[vk::push_constant]]
 ConstantBuffer<PushConstants> push;

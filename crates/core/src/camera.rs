@@ -14,7 +14,7 @@ impl Camera {
         Self {
             position: Point3::new(0.0, 3.0, 5.0),
             yaw: -std::f32::consts::FRAC_PI_2, // -90度 (初期状態で原点を向く)
-            pitch: -0.5
+            pitch: -0.5,
         }
     }
 
@@ -36,19 +36,32 @@ impl Camera {
             self.yaw.cos() * self.pitch.cos(),
             self.pitch.sin(),
             self.yaw.sin() * self.pitch.cos(),
-        ).normalize();
+        )
+        .normalize();
 
         // フロントベクトルと「真上」のベクトルから、カメラの右方向(ライトベクトル)を計算
         let right = front.cross(&Vector3::y()).normalize();
 
         // --- 3. 移動処理 (キーボード) ---
         let speed = 5.0 * delta_time;
-        if input.move_forward { self.position += front * speed; }
-        if input.move_backward { self.position -= front * speed; }
-        if input.move_right { self.position += right * speed; }
-        if input.move_left { self.position -= right * speed; }
-        if input.move_up { self.position.y += speed; }
-        if input.move_down { self.position.y -= speed; }
+        if input.move_forward {
+            self.position += front * speed;
+        }
+        if input.move_backward {
+            self.position -= front * speed;
+        }
+        if input.move_right {
+            self.position += right * speed;
+        }
+        if input.move_left {
+            self.position -= right * speed;
+        }
+        if input.move_up {
+            self.position.y += speed;
+        }
+        if input.move_down {
+            self.position.y -= speed;
+        }
     }
 
     /// レンダラーに渡すための View行列 を生成する
@@ -57,7 +70,8 @@ impl Camera {
             self.yaw.cos() * self.pitch.cos(),
             self.pitch.sin(),
             self.yaw.sin() * self.pitch.cos(),
-        ).normalize();
+        )
+        .normalize();
 
         Matrix4::look_at_rh(&self.position, &(self.position + front), &Vector3::y())
     }

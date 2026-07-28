@@ -1,7 +1,7 @@
 // crates/renderer/src/command.rs
 
+use crate::infra::context::GpuBuffer;
 use ash::vk;
-use crate::context::GpuBuffer;
 use render_api::engine_error::EngineError;
 
 /// 描画コマンドを安全に記録するためのラッパー (Layer 4)
@@ -16,14 +16,18 @@ impl<'a> CommandRecorder<'a> {
     /// 新しいコマンドレコーダーを生成します。
     #[inline(always)]
     pub fn new(device: &'a ash::Device, command_buffer: vk::CommandBuffer) -> Self {
-        Self { device, command_buffer }
+        Self {
+            device,
+            command_buffer,
+        }
     }
 
     /// 頂点バッファをバインドします。
     #[inline(always)]
     pub fn bind_vertex_buffer(&self, buffer: &GpuBuffer) {
         unsafe {
-            self.device.cmd_bind_vertex_buffers(self.command_buffer, 0, &[buffer.buffer], &[0]);
+            self.device
+                .cmd_bind_vertex_buffers(self.command_buffer, 0, &[buffer.buffer], &[0]);
         }
     }
 
@@ -31,7 +35,8 @@ impl<'a> CommandRecorder<'a> {
     #[inline(always)]
     pub fn set_viewport(&self, first_viewport: u32, viewports: &[vk::Viewport]) {
         unsafe {
-            self.device.cmd_set_viewport(self.command_buffer, first_viewport, viewports);
+            self.device
+                .cmd_set_viewport(self.command_buffer, first_viewport, viewports);
         }
     }
 
@@ -39,7 +44,8 @@ impl<'a> CommandRecorder<'a> {
     #[inline(always)]
     pub fn set_scissor(&self, first_scissor: u32, scissors: &[vk::Rect2D]) {
         unsafe {
-            self.device.cmd_set_scissor(self.command_buffer, first_scissor, scissors);
+            self.device
+                .cmd_set_scissor(self.command_buffer, first_scissor, scissors);
         }
     }
 
@@ -50,14 +56,15 @@ impl<'a> CommandRecorder<'a> {
     /// アプリをクラッシュさせず `EngineError` を返します。
     #[inline(always)]
     pub fn bind_index_buffer(&self, buffer: &GpuBuffer) -> Result<(), EngineError> {
-        let index_type = buffer
-            .index_type
-            .ok_or_else(|| {
-                EngineError::Legacy("bind_index_buffer: 渡されたGpuBufferにindex_typeが設定されていません".to_string())
-            })?;
+        let index_type = buffer.index_type.ok_or_else(|| {
+            EngineError::Legacy(
+                "bind_index_buffer: 渡されたGpuBufferにindex_typeが設定されていません".to_string(),
+            )
+        })?;
 
         unsafe {
-            self.device.cmd_bind_index_buffer(self.command_buffer, buffer.buffer, 0, index_type);
+            self.device
+                .cmd_bind_index_buffer(self.command_buffer, buffer.buffer, 0, index_type);
         }
 
         Ok(())

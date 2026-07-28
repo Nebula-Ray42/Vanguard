@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::swapchain::SwapchainError;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum EngineError {
