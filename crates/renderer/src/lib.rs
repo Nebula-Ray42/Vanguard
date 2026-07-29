@@ -10,7 +10,6 @@ use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::mem::{align_of, size_of, size_of_val};
 
-// infraフォルダの中から必要なものを引っ張ってくる
 use buffer::copy_buffer;
 use vulkan::context::{GpuBuffer, VulkanContext};
 use vulkan::pipeline::GraphicsPipeline;
@@ -24,6 +23,7 @@ use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
 use crate::vulkan::sync;
 use render_api::engine_error::EngineError;
 use tracing::info;
+use crate::descriptors::layout::GlobalUbo;
 
 /// GPUに転送済みのメッシュデータ
 pub struct GpuMesh {
@@ -32,19 +32,23 @@ pub struct GpuMesh {
     pub index_count: u32,
 }
 
+/// 描画中のフレーム状態を保持するトークン
+pub struct ActiveFrame<'a> {
+    pub recorder: CommandRecorder<'a>,
+    pub image_index: u32,
+    pub frame_index: usize,
+}
+
 pub struct VulkanRenderer {
     context: VulkanContext,
     swapchain_target: SwapchainTarget,
     pipeline: GraphicsPipeline,
     sync: SyncContext,
     pub meshes: Vec<GpuMesh>,
-}
-
-/// 描画中のフレーム状態を保持するトークン (Layer 4)
-pub struct ActiveFrame<'a> {
-    pub recorder: CommandRecorder<'a>,
-    pub image_index: u32,
-    pub frame_index: usize,
+    global_ubo_buffer: GpuBuffer,
+    descriptor_pool: vk::DescriptorPool,
+    descriptor_set_layout: vk::DescriptorSetLayout,
+    global_descriptor_set: vk::DescriptorSet,
 }
 
 impl VulkanRenderer {
@@ -78,10 +82,63 @@ impl VulkanRenderer {
         };
 
         let swapchain_target = SwapchainTarget::new(&context, window_width, window_height)?;
+
+        // 1. UBO用のバッファ（CPUから書き込み可能）を作成
+        let global_ubo_buffer = context.create_buffer(
+            size_of::<GlobalUbo>() as vk::DeviceSize,
+            vk::BufferUsageFlags::UNIFORM_BUFFER,
+            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
+        )?;
+
+        // 2. Descriptor Set Layout の作成（Slangの binding(0, 0) に対応）
+        let ubo_binding = vk::DescriptorSetLayoutBinding::default()
+            .binding(0)
+            .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
+            .descriptor_count(1)
+            .stage_flags(vk::ShaderStageFlags::VERTEX);
+
+        let layout_info = vk::DescriptorSetLayoutCreateInfo::default()
+            .bindings(std::slice::from_ref(&ubo_binding));
+        let descriptor_set_layout = unsafe {
+            context.device.create_descriptor_set_layout(&layout_info, None)
+                .map_err(|e| EngineError::Legacy(format!("Layout生成失敗: {}", e)))?
+        };
+
+        // 3. Descriptor Pool と Set の確保
+        let pool_size = vk::DescriptorPoolSize::default()
+            .ty(vk::DescriptorType::UNIFORM_BUFFER)
+            .descriptor_count(1);
+        let pool_info = vk::DescriptorPoolCreateInfo::default()
+            .pool_sizes(std::slice::from_ref(&pool_size))
+            .max_sets(1);
+        let descriptor_pool = unsafe {
+            context.device.create_descriptor_pool(&pool_info, None).unwrap()
+        };
+
+        let alloc_info = vk::DescriptorSetAllocateInfo::default()
+            .descriptor_pool(descriptor_pool)
+            .set_layouts(std::slice::from_ref(&descriptor_set_layout));
+        let global_descriptor_set = unsafe {
+            context.device.allocate_descriptor_sets(&alloc_info).unwrap()[0]
+        };
+
+        // 4. Set にバッファを紐付け (WriteDescriptorSet)
+        let buffer_info = vk::DescriptorBufferInfo::default()
+            .buffer(global_ubo_buffer.buffer)
+            .offset(0)
+            .range(size_of::<GlobalUbo>() as vk::DeviceSize);
+        let write_set = vk::WriteDescriptorSet::default()
+            .dst_set(global_descriptor_set)
+            .dst_binding(0)
+            .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
+            .buffer_info(std::slice::from_ref(&buffer_info));
+        unsafe { context.device.update_descriptor_sets(&[write_set], &[]); }
+
         let pipeline = GraphicsPipeline::new(
             &context.device,
             swapchain_target.render_pass,
             swapchain_target.extent,
+            descriptor_set_layout,
         )?;
         let image_count = swapchain_target.images.len() as u32;
         let sync = SyncContext::new(&context.device, queue_family_index, image_count)?;
@@ -92,6 +149,10 @@ impl VulkanRenderer {
             pipeline,
             sync,
             meshes: Vec::new(),
+            global_ubo_buffer,
+            descriptor_pool,
+            descriptor_set_layout,
+            global_descriptor_set,
         })
     }
 
@@ -262,21 +323,51 @@ impl VulkanRenderer {
         vulkan_clip[(2, 2)] = 0.5;
         vulkan_clip[(2, 3)] = 0.5;
 
-        // ハードコードを削除し、snapshotからView行列を受け取る
         let view_proj = vulkan_clip * projection * snapshot.view_matrix;
 
+        unsafe {
+            let data_ptr = self.context.device.map_memory(
+                self.global_ubo_buffer.memory,
+                0,
+                size_of::<GlobalUbo>() as vk::DeviceSize,
+                vk::MemoryMapFlags::empty(),
+            ).unwrap();
+
+            let view_proj_array: [[f32; 4]; 4] = view_proj.into();
+
+            let ubo = GlobalUbo {
+                view_proj: view_proj_array,
+                camera_pos: [0.0, 0.0, 0.0],
+                _padding: 0.0,
+            };
+            std::ptr::copy_nonoverlapping(&ubo, data_ptr as *mut GlobalUbo, 1);
+
+            self.context.device.unmap_memory(self.global_ubo_buffer.memory);
+        }
+
+        unsafe {
+            self.context.device.cmd_bind_descriptor_sets(
+                recorder.command_buffer,
+                vk::PipelineBindPoint::GRAPHICS,
+                self.pipeline.layout,
+                0, // first_set
+                &[self.global_descriptor_set],
+                &[], // dynamic_offsets
+            );
+        }
+
         for (i, instance) in snapshot.instances.iter().enumerate() {
-            let mut mvp = view_proj * instance.transform;
+
+            let model = instance.transform;
 
             if i == 0 {
-                info!("最終MVP行列:\n{:.2}", mvp);
+                info!("最終MVP行列:\n{:.2}", model);
             }
 
-            mvp = mvp.transpose();
 
-            let mvp_slice = mvp.as_slice();
+            let model_slice = model.as_slice();
             let bytes = unsafe {
-                std::slice::from_raw_parts(mvp_slice.as_ptr() as *const u8, size_of_val(mvp_slice))
+                std::slice::from_raw_parts(model_slice.as_ptr() as *const u8, size_of_val(model_slice))
             };
 
             recorder.push_constants(self.pipeline.layout, vk::ShaderStageFlags::VERTEX, 0, bytes);
@@ -438,6 +529,9 @@ impl Drop for VulkanRenderer {
             self.sync.destroy(&self.context.device);
             self.pipeline.destroy(&self.context.device);
             self.swapchain_target.destroy(&self.context.device);
+
+            self.context.device.destroy_descriptor_pool(self.descriptor_pool, None);
+            self.context.device.destroy_descriptor_set_layout(self.descriptor_set_layout, None);
 
             info!("VulkanRenderer child objects destroyed cleanly.");
         }

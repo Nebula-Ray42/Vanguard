@@ -1,2 +1,2 @@
 pub mod buffer;
-pub mod AllocatedBuffer;
+pub mod allocated_buffer;

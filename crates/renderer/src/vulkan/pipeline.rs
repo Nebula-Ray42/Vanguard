@@ -163,6 +163,7 @@ impl GraphicsPipeline {
         device: &Device,
         render_pass: vk::RenderPass,
         extent: vk::Extent2D,
+        descriptor_set_layout: vk::DescriptorSetLayout,
     ) -> Result<Self, EngineError> {
         // シェーダーの読み込み
         let vert_spv = include_bytes!("../../../../assets/shaders/main_vert.spv");
@@ -172,8 +173,7 @@ impl GraphicsPipeline {
         let frag_module = create_shader_module(device, frag_spv)?;
 
         // CString::new はハードコードされた文字列("main")のため、失敗しないことが保証されている
-        let main_name =
-            CString::new("main").expect("C文字列の変換に失敗(Null文字が含まれています)");
+        let main_name = CString::new("main").expect("C文字列の変換に失敗");
 
         let shader_stages = vec![
             vk::PipelineShaderStageCreateInfo::default()
@@ -216,8 +216,11 @@ impl GraphicsPipeline {
             .offset(0)
             .size(size_of::<[f32; 16]>() as u32)];
 
-        let layout_info =
-            vk::PipelineLayoutCreateInfo::default().push_constant_ranges(&push_constant_ranges);
+        let set_layouts = [descriptor_set_layout];
+
+        let layout_info = vk::PipelineLayoutCreateInfo::default()
+            .push_constant_ranges(&push_constant_ranges)
+            .set_layouts(&set_layouts);
 
         let layout = unsafe {
             device
