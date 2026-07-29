@@ -16,7 +16,7 @@ struct VertexOutput {
     float3 normalDir : NORMAL;
 }
 
-// 将来の拡張用（DOP的な大量オブジェクト処理用。今はそのまま残しておきます）
+// TODO 将来の拡張用
 struct Transform {
     float3 position;
     float4 rotation;
@@ -32,7 +32,6 @@ struct Entity {
 // 2. 外部からのデータ受け入れ口
 // ==========================================
 
-// 【今回追加】全体で共通のデータ（カメラの視点など）
 struct GlobalUbo {
     float4x4 viewProj;
 };
@@ -41,7 +40,6 @@ struct GlobalUbo {
 ConstantBuffer<GlobalUbo> globalData;
 
 
-// 【元からあったもの】描画する物体ごとの個別データ
 struct PushConstants {
     float4x4 model; // mvpから、個別の位置情報(model)のみに変更
 };
@@ -58,16 +56,12 @@ ConstantBuffer<PushConstants> push;
 VertexOutput vertexMain(VertexInput input) {
     VertexOutput output;
 
-    // 1. 頂点の元の位置に、個別の配置情報（Model）を掛けて、3D空間上の絶対位置を出す
-    // ※ Slangでは mul(行列, ベクトル) の順序が基本です
     float4 worldPos = mul(push.model, float4(input.position, 1.0));
 
-    // 2. その絶対位置に、カメラの視点情報（ViewProj）を掛けて画面に映す
     output.position = mul(globalData.viewProj, worldPos);
 
-    // 色と向き（法線）はそのまま後ろへ受け渡す
     output.color = input.color;
-    // ※ 法線は回転（Model）の影響を受けるため、本当はここで回転を掛ける必要がありますが、
+    // TODO 法線は回転（Model）の影響を受けるため、本当はここで回転を掛ける必要がありますが、
     // まずは画面に絵を出すことを優先してそのまま渡します。
     output.normalDir = input.normalDir;
 
