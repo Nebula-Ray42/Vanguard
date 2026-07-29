@@ -21,13 +21,11 @@ impl VulkanBuffer {
         usage_flags: vk::BufferUsageFlags,
     ) -> Result<Self, EngineError> {
 
-        // 1. バッファサイズの計算と早期リターン（Always-Valid）
         let size = (size_of::<T>() * data.len()) as vk::DeviceSize;
         if size == 0 {
             return Err(EngineError::Legacy("データサイズが0のバッファは作成できません".to_string()));
         }
 
-        // 2. CPU側の一時バッファ（Staging Buffer）を作成する
         let (staging_buffer, staging_memory) = Self::create_buffer(
             context,
             size,
@@ -35,21 +33,18 @@ impl VulkanBuffer {
             vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
         )?;
 
-        // 3. Staging Bufferにデータを書き込む (Memory Mapping)
         unsafe {
             let data_ptr = context
                 .device
                 .map_memory(staging_memory, 0, size, vk::MemoryMapFlags::empty())
                 .map_err(|e| EngineError::Legacy(format!("メモリマップ失敗: {:?}", e)))?;
 
-            // bytemuck等を使ってスライスをコピー
             let mut align: Align<T> = Align::new(data_ptr, align_of::<T>() as u64, size);
             align.copy_from_slice(bytemuck::cast_slice(data));
 
             context.device.unmap_memory(staging_memory);
         }
 
-        // 4. GPU側の本命バッファ（Device Local Buffer）を作成する
         let (device_buffer, device_memory) = Self::create_buffer(
             context,
             size,
@@ -57,8 +52,7 @@ impl VulkanBuffer {
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
 
-        // 5. さっきの関数を使って転送コマンドを発行・同期
-        copy_buffer( // ※適切なパスに変更してください
+        copy_buffer(
                                      context,
                                      command_pool,
                                      staging_buffer,
@@ -66,13 +60,11 @@ impl VulkanBuffer {
                                      size,
         )?;
 
-        // 6. 用済みの Staging Buffer の破棄
         unsafe {
             context.device.destroy_buffer(staging_buffer, None);
             context.device.free_memory(staging_memory, None);
         }
 
-        // 7. 常に正しい状態の Device Local Buffer を返す
         Ok(Self {
             buffer: device_buffer,
             memory: device_memory,
@@ -123,7 +115,6 @@ impl VulkanBuffer {
         type_filter: u32,
         properties: vk::MemoryPropertyFlags,
     ) -> Result<u32, EngineError> {
-        // ※ contextから物理デバイスのメモリプロパティを取得する関数があると想定
         let mem_properties = unsafe {
             context.instance.get_physical_device_memory_properties(context.physical_device)
         };

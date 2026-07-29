@@ -11,12 +11,10 @@ pub struct GlobalUbo {
 }
 
 pub fn create_global_ubo_layout(device: &ash::Device) -> vk::DescriptorSetLayout {
-    // 契約内容：Binding 0 に UBO が1つ来ますよ、という宣言
     let ubo_layout_binding = vk::DescriptorSetLayoutBinding::default()
         .binding(0)
         .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
         .descriptor_count(1)
-        // 今回のUBO（カメラ行列や位置）は、頂点計算でも光の計算（フラグメント）でも使うため、両方のステージに公開します
         .stage_flags(vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT);
 
     let bindings = [ubo_layout_binding];
