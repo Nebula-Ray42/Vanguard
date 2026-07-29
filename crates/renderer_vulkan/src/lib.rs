@@ -5,7 +5,6 @@ pub mod render;
 pub mod scene;
 pub mod descriptors;
 pub mod buffers;
-pub mod swapchain;
 
 use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
@@ -16,14 +15,14 @@ use pipeline::context::{GpuBuffer, VulkanContext};
 use pipeline::pipeline::GraphicsPipeline;
 use pipeline::sync::SyncContext;
 use render::command::CommandRecorder;
-use swapchain::SwapchainTarget;
+use render::swapchain::SwapchainTarget;
 
 use nalgebra::Matrix4;
 use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
 
 use crate::descriptors::layout::GlobalUbo;
 use crate::pipeline::sync;
-use render_api::engine_error::EngineError;
+use render_api::error_pass::engine_error::EngineError;
 use tracing::info;
 
 /// GPUに転送済みのメッシュデータ

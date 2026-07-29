@@ -2,7 +2,7 @@ use ash::{Device, vk};
 use std::ffi::CString;
 
 use crate::scene::mesh::{get_attribute_descriptions, get_vertex_binding_description};
-use render_api::engine_error::EngineError;
+use render_api::error_pass::engine_error::EngineError;
 
 // =====================================================================
 // Layer 3: Pipeline Builder (パイプライン生成の複雑さを隠蔽するヘルパー)

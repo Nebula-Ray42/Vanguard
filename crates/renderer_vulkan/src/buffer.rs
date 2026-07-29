@@ -1,6 +1,6 @@
 use crate::pipeline::context::VulkanContext;
 use ash::vk;
-use render_api::engine_error::EngineError;
+use render_api::error_pass::engine_error::EngineError;
 
 /// バッファ間のデータ転送（One-Time Submit）を同期的に実行します。
 ///

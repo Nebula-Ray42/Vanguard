@@ -5,7 +5,7 @@ use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::ffi::CString;
 use std::sync::Arc;
 
-use render_api::engine_error::EngineError;
+use render_api::error_pass::engine_error::EngineError;
 
 /// Vulkanのコアインスタンスとデバイスを管理するコンテキスト (Layer 1)
 ///

@@ -1,4 +1,4 @@
-use crate::render_pass_error::RenderPassError;
+use crate::error_pass::render_pass_error::RenderPassError;
 use ash::vk;
 use thiserror::Error;
 

@@ -2,7 +2,7 @@ use ash::{Device, vk};
 use std::cell::Cell;
 
 // ※ パスは環境に合わせて調整してください
-use render_api::engine_error::EngineError;
+use render_api::error_pass::engine_error::EngineError;
 
 pub const MAX_FRAMES_IN_FLIGHT: usize = 2;
 

@@ -1,4 +1,4 @@
-use crate::swapchain::SwapchainError;
+use crate::error_pass::swapchain::SwapchainError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

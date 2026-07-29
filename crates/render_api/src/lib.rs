@@ -1,16 +1,12 @@
-pub mod engine_error;
-#[path = "render-pass-error.rs"]
-pub mod render_pass_error;
-pub mod swapchain;
-pub mod mapping_error;
+pub mod error_pass;
 
 // crates/render_api/src/lib.rs
 use bytemuck::{Pod, Zeroable};
+use error_pass::mapping_error::MappingError;
 use glam::Mat4;
 use nalgebra::Matrix4;
-use std::collections::HashMap;
 use shared::engine_data;
-use crate::mapping_error::MappingError;
+use std::collections::HashMap;
 
 
 // ==========================================

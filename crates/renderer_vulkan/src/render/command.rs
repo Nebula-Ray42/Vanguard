@@ -2,7 +2,7 @@
 
 use crate::pipeline::context::GpuBuffer;
 use ash::vk;
-use render_api::engine_error::EngineError;
+use render_api::error_pass::engine_error::EngineError;
 
 /// 描画コマンドを安全に記録するためのラッパー (Layer 4)
 ///
