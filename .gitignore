@@ -11,10 +11,13 @@ Thumbs.db
 Cargo.lock
 .cargo
 
-# --- Python ---  
+# --- Python ---
 python/*.egg-info/
 python/dist/
 python/build/
+
+# --- Slang ---
+*.spv
 
 # --- Personal Settings ---
 Functional-Implementation-Specifications-and-Processing-Flow
