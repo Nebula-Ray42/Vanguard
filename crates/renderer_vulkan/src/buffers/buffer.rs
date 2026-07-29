@@ -1,8 +1,8 @@
-// src/vulkan/buffer.rs
+// src/pipeline/buffer.rs
 
 use ash::util::Align;
 use ash::vk;
-use crate::vulkan::context::VulkanContext;
+use crate::pipeline::context::VulkanContext;
 use render_api::engine_error::EngineError;
 use crate::buffer::copy_buffer;
 

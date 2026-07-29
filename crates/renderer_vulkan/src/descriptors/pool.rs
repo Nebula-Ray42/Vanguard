@@ -1,7 +1,7 @@
 use ash::vk;
 use render_api::engine_error::EngineError;
 use crate::descriptors::layout::GlobalUbo;
-use crate::vulkan::context::VulkanContext;
+use crate::pipeline::context::VulkanContext;
 
 pub fn create_descriptor_pool(context: &VulkanContext) -> Result<vk::DescriptorPool, EngineError> {
     let pool_size = vk::DescriptorPoolSize::default()
@@ -31,7 +31,7 @@ pub fn create_descriptor_set(
     let alloc_info = vk::DescriptorSetAllocateInfo::default()
         .descriptor_pool(pool)
         .set_layouts(&layouts);
-    
+
     let descriptor_sets = unsafe {
         context.device.allocate_descriptor_sets(&alloc_info)
             .map_err(|e| EngineError::Legacy(format!("Descriptor Set確保失敗: {:?}", e)))?
@@ -44,7 +44,7 @@ pub fn create_descriptor_set(
         .range(size_of::<GlobalUbo>() as vk::DeviceSize);
 
     let buffer_infos = [buffer_info];
-    
+
     let descriptor_write = vk::WriteDescriptorSet::default()
         .dst_set(descriptor_set)
         .dst_binding(0)

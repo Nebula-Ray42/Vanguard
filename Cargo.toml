@@ -3,7 +3,7 @@
 members = [
     "crates/core",
     "crates/render_api",
-    "crates/renderer",
+  "crates/renderer_vulkan",
     "crates/runner",
     "crates/shared"
 ]

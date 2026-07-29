@@ -1,7 +1,7 @@
 use bytemuck::Pod;
 use ash::vk;
 use render_api::engine_error::EngineError;
-use crate::vulkan::context::VulkanContext;
+use crate::pipeline::context::VulkanContext;
 
 pub struct AllocatedBuffer {
     pub buffer: vk::Buffer,

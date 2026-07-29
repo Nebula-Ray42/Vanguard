@@ -1,4 +1,4 @@
-// crates/renderer/src/context.rs
+// crates/renderer_vulkan/src/context.rs
 use ash::khr::surface::Instance as SurfaceLoader;
 use ash::{Device, Entry, Instance, vk};
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};

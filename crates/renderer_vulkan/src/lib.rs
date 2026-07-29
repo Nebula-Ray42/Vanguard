@@ -1,29 +1,30 @@
 // src/lib.rs
 mod buffer;
-pub mod vulkan;
+pub mod pipeline;
 pub mod render;
 pub mod scene;
 pub mod descriptors;
 pub mod buffers;
+pub mod swapchain;
 
 use ash::vk;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::mem::{align_of, size_of, size_of_val};
 
 use buffer::copy_buffer;
-use vulkan::context::{GpuBuffer, VulkanContext};
-use vulkan::pipeline::GraphicsPipeline;
-use vulkan::swapchain::SwapchainTarget;
-use vulkan::sync::SyncContext;
+use pipeline::context::{GpuBuffer, VulkanContext};
+use pipeline::pipeline::GraphicsPipeline;
+use pipeline::sync::SyncContext;
 use render::command::CommandRecorder;
+use swapchain::SwapchainTarget;
 
 use nalgebra::Matrix4;
 use render_api::{MeshData, MeshId, RenderSnapshot, Vertex};
 
-use crate::vulkan::sync;
+use crate::descriptors::layout::GlobalUbo;
+use crate::pipeline::sync;
 use render_api::engine_error::EngineError;
 use tracing::info;
-use crate::descriptors::layout::GlobalUbo;
 
 /// GPUに転送済みのメッシュデータ
 pub struct GpuMesh {

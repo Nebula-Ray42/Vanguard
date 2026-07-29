@@ -1,4 +1,4 @@
-use crate::vulkan::context::VulkanContext;
+use crate::pipeline::context::VulkanContext;
 use ash::vk;
 use render_api::engine_error::EngineError;
 

@@ -67,7 +67,7 @@ fn compile_flatbuffers(schema_path: &str, output_dir: &str) -> Result<(), String
 }
 
 fn main() -> Result<(), String> {
-    // CARGO_MANIFEST_DIR は build.rs が配置されたクレートのディレクトリ (例: crates/renderer)
+    // CARGO_MANIFEST_DIR は build.rs が配置されたクレートのディレクトリ (例: crates/renderer_vulkan)
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
 
     // --- シェーダーのコンパイル処理 ---

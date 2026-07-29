@@ -1,10 +1,10 @@
-// crates/renderer/src/swapchain.rs
+// crates/renderer_vulkan/src/swapchain.rs
 use ash::khr::swapchain::Device as SwapchainLoader;
 use ash::{Device, vk};
 use render_api::render_pass_error::RenderPassError;
 use render_api::swapchain::SwapchainError;
 
-use crate::vulkan::context::VulkanContext;
+use crate::pipeline::context::VulkanContext;
 use render_api::engine_error::EngineError;
 
 /// スワップチェーンのライフサイクルと画面更新を管理する構造体
