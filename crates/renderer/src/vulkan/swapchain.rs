@@ -4,11 +4,10 @@ use ash::{Device, vk};
 use render_api::render_pass_error::RenderPassError;
 use render_api::swapchain::SwapchainError;
 
-// ※ 内部のエラー伝播用にインポート
 use crate::vulkan::context::VulkanContext;
 use render_api::engine_error::EngineError;
 
-/// スワップチェーンのライフサイクルと画面更新を管理する構造体 (Layer 2)
+/// スワップチェーンのライフサイクルと画面更新を管理する構造体
 ///
 /// Vulkanの描画結果をディスプレイに同期して出力するための
 /// レスポンス出力バッファキューとして機能します。

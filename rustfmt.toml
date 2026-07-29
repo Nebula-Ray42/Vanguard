@@ -1,0 +1,16 @@
+# Rust Editionの指定 (現在の標準)
+edition = "2021"
+
+# 1行の最大文字数 (デフォルトは100ですが、少し余裕を持たせています)
+max_width = 100
+
+# コメント内のコードブロックもフォーマットする
+format_code_in_doc_comments = true
+
+# import (use) のグループ化と並び替えを自動化
+# 標準ライブラリ(std) -> 外部クレート(ash等) -> クレート内部(crate::) の順に綺麗に並びます
+group_imports = "StdExternalCrate"
+imports_granularity = "Crate"
+
+# 関数の引数が多い場合、縦に並べて見やすくする
+use_small_heuristics = "Default"

@@ -1,51 +1,68 @@
-// --------------------------------------------------------
+// ==========================================
 // 1. データ構造の定義
-// --------------------------------------------------------
+// ==========================================
 
 // CPUから送られてくる3Dの頂点データ
 struct VertexInput {
-     [[vk::location(0)]] float3 position : POSITION;
-     [[vk::location(1)]] float3 color : COLOR;
-     [[vk::location(2)]] float3 normalDir : NORMAL;
- }
+    [[vk::location(0)]] float3 position : POSITION;
+    [[vk::location(1)]] float3 color : COLOR;
+    [[vk::location(2)]] float3 normalDir : NORMAL;
+}
 
- // 頂点シェーダーからフラグメントシェーダーへ渡すデータ
- struct VertexOutput {
-     float4 position : SV_Position;
-     float3 color : COLOR;
-     float3 normalDir : NORMAL;
- }
+// 頂点シェーダーからフラグメントシェーダーへ渡すデータ
+struct VertexOutput {
+    float4 position : SV_Position;
+    float3 color : COLOR;
+    float3 normalDir : NORMAL;
+}
 
-// MVP行列（Model・View・Projection）
-struct PushConstants {
-    float4x4 mvp;
-};
-
+// TODO 将来の拡張用
 struct Transform {
     float3 position;
     float4 rotation;
     float3 scale;
 }
-
 struct Entity {
     uint32_t id;
     uint32_t mesh_id;
     Transform transform;
 }
 
-// VulkanのPush Constantとして受け取る宣言
+// ==========================================
+// 2. 外部からのデータ受け入れ口
+// ==========================================
+
+struct GlobalUbo {
+    float4x4 viewProj;
+};
+
+[[vk::binding(0, 0)]]
+ConstantBuffer<GlobalUbo> globalData;
+
+
+struct PushConstants {
+    float4x4 model; // mvpから、個別の位置情報(model)のみに変更
+};
+
 [[vk::push_constant]]
 ConstantBuffer<PushConstants> push;
+
+
+// ==========================================
+// 3. 処理ロジック
+// ==========================================
 
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input) {
     VertexOutput output;
 
-    // CPUから送られてきたMVP行列を使って頂点を正しく変換する
-    output.position = mul(float4(input.position, 1.0), push.mvp);
+    float4 worldPos = mul(push.model, float4(input.position, 1.0));
 
-    // 色と向き（法線）はそのまま後ろへ受け渡す
+    output.position = mul(globalData.viewProj, worldPos);
+
     output.color = input.color;
+    // TODO 法線は回転（Model）の影響を受けるため、本当はここで回転を掛ける必要がありますが、
+    // まずは画面に絵を出すことを優先してそのまま渡します。
     output.normalDir = input.normalDir;
 
     return output;
@@ -54,7 +71,6 @@ VertexOutput vertexMain(VertexInput input) {
 [shader("fragment")]
 float4 fragmentMain(VertexOutput input) : SV_Target {
     // 1. ベクトルの正規化（長さを1にする）
-    // 受け取った法線の名前を normalDir に変えたのでここも合わせます
     float3 N = normalize(input.normalDir);
 
     // 2. ライトの方向（仮に右上奥から手前下へ向かう光とする）

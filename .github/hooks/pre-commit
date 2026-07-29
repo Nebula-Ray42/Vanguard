@@ -1,14 +1,22 @@
 #!/bin/sh
-# コミット前に自動でフォーマットとコンパイルチェックを実行する
 
+# 1. フォーマットチェック
 echo "Running cargo fmt..."
-cargo fmt --all
-
-echo "Running cargo check..."
-cargo check --workspace
-
-# checkが失敗した場合はコミットを中止する
+cargo fmt --all -- --check
 if [ $? -ne 0 ]; then
-    echo "Error: cargo check failed. Commit aborted."
+    echo "警告: コードのフォーマットがされていません。"
+    echo "'cargo fmt' を実行してから再コミットしてください。"
     exit 1
 fi
+
+# 2. 静的解析 (Clippy)
+echo "🦀 Running cargo clippy..."
+# -D warnings で、警告(Warning)が出た時点でもコミットを弾く厳しい設定
+cargo clippy --all-targets --all-features -- -D warnings
+if [ $? -ne 0 ]; then
+    echo "警告: Clippyが問題を検知しました。コードを修正してください。"
+    exit 1
+fi
+
+echo "すべてのチェックを通過しました！"
+exit 0
