@@ -11,7 +11,6 @@ void execute_render_command(const uint8_t* ptr, size_t len) {
         return;
     }
 
-    // 2. ゼロコピーでデータへアクセス
     auto command = rey_engine::render::GetRenderCommand(ptr);
     auto color = command->clear_color();
 
