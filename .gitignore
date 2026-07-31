@@ -11,6 +11,10 @@ Thumbs.db
 Cargo.lock
 .cargo
 
+# --- C++ ---
+cmake-build-debug
+renderer_cpp/cmake-build-debug
+
 # --- Python ---
 python/*.egg-info/
 python/dist/

@@ -1,0 +1,7 @@
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20 # clang-formatの仕様上、最新指定はc++20（C++23も内包して処理されます）
+IndentWidth: 4  # Rustの標準4スペースと合わせる
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: Empty
+PointerAlignment: Left # Rust寄り (Type* name ではなく Type *name になるのを防ぐ)
