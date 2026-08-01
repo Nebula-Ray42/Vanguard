@@ -32,17 +32,14 @@ namespace rey_engine::render {
 
     class VulkanRenderer {
     public:
-        // Rustの `new` に相当するファクトリメソッド
         [[nodiscard]] static std::expected<VulkanRenderer, EngineError> create(
             const char* app_name,
-            void* window_handle, // OSごとのウィンドウハンドル (GLFWwindow* など)
+            void* window_handle,
             uint32_t window_width,
             uint32_t window_height);
 
-        // Rustの `Drop` に相当するデストラクタ
         ~VulkanRenderer();
 
-        // ムーブセマンティクスの明示（リソースの二重解放を防ぐためコピーは禁止）
         VulkanRenderer(VulkanRenderer&& other) noexcept;
         VulkanRenderer& operator=(VulkanRenderer&& other) noexcept;
         VulkanRenderer(const VulkanRenderer&) = delete;
@@ -53,7 +50,6 @@ namespace rey_engine::render {
         [[nodiscard]] std::expected<void, EngineError> draw_frame(const RenderSnapshot& snapshot);
 
     private:
-        // 内部利用専用のデフォルトコンストラクタ（createから呼ばれる）
         VulkanRenderer() = default;
 
         [[nodiscard]] std::expected<ActiveFrame, EngineError> begin_frame();

@@ -10,9 +10,8 @@
 namespace rey_engine::render {
 
 // ============================================================================
-// 1. GPUバッファコンテナ (VMA対応版)
+// 1. GPUバッファコンテナ
 // ============================================================================
-// メモリの管理をVMAに委譲したため、VkDeviceMemoryではなくVmaAllocationを保持します。
 struct GpuBuffer {
     VkBuffer buffer{VK_NULL_HANDLE};
     VmaAllocation allocation{VK_NULL_HANDLE};
@@ -24,7 +23,7 @@ struct GpuBuffer {
 };
 
 // ============================================================================
-// 2. Vulkan コアコンテキスト (VMA統合版)
+// 2. Vulkan コアコンテキスト
 // ============================================================================
 struct VulkanContext {
     VkInstance instance{VK_NULL_HANDLE};
@@ -33,8 +32,6 @@ struct VulkanContext {
     VkDevice device{VK_NULL_HANDLE};
     VkQueue graphics_queue{VK_NULL_HANDLE};
     uint32_t graphics_queue_family_index{0};
-
-    // 【追加】すべてのメモリ確保を司るVMAアロケータ
     VmaAllocator allocator{VK_NULL_HANDLE};
 
     void destroy() noexcept {
@@ -74,7 +71,5 @@ inline void GpuBuffer::destroy(const VulkanContext& context) noexcept {
     const char* app_name,
     VkSurfaceKHR surface
 );
-
-// ※ find_memory_type はVMAが内部で自動処理するため削除しました
 
 } // namespace rey_engine::render

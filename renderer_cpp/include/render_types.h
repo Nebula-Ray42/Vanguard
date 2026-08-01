@@ -7,13 +7,13 @@
 #include <cstddef>
 
 // ==========================================
-// 1. Value Objects (ID群)
+// 1. Value Objects
 // ==========================================
 struct EntityId { uint32_t value; };
 struct MeshId { uint32_t value; };
 
 // ==========================================
-// 2. DTO (描画用データ構造)
+// 2. DTO
 // ==========================================
 
 // 頂点1つ分のデータ
@@ -22,7 +22,6 @@ struct Vertex {
     glm::vec3 color;
     glm::vec3 normal;
 
-    // 構造体の中にVulkanへ教える関数を閉じ込めておくとスッキリします
     static vk::VertexInputBindingDescription get_binding_description() {
         return vk::VertexInputBindingDescription()
             .setBinding(0)
@@ -39,7 +38,6 @@ struct Vertex {
     }
 };
 
-// メッシュ全体を表す純粋なデータ
 struct MeshData {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
@@ -62,8 +60,6 @@ struct RenderSnapshot {
 };
 
 // --- GPU用データ構造 ---
-// C++では alignas(16) を付けることで、Rustで手動計算していた
-// 16バイトアライメント（std140/std430レイアウト）をコンパイラに保証させることができます。
 
 struct alignas(16) GpuTransform {
     glm::vec3 position;
@@ -82,10 +78,7 @@ struct alignas(16) GpuEntity {
 
 struct PushConstants {
     glm::mat4 mvp;
-
-    // Always-Valid: 構築時に必ずMVPを計算して保持する
     PushConstants(const glm::mat4& model, const glm::mat4& view, const glm::mat4& proj) {
-        // GLMの行列乗算も数式通り P * V * M
         mvp = proj * view * model;
     }
 };

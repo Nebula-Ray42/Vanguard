@@ -15,7 +15,6 @@ namespace rey_engine::render {
 // Layer 3: Pipeline Structures
 // =====================================================================
 
-// Push Constantsの定義 (C++は標準でC互換レイアウトなので #[repr(C)] 相当)
 struct PushConstants {
     float model[16];
 };
@@ -194,7 +193,6 @@ struct GraphicsPipeline {
         VkRenderPass render_pass,
         VkExtent2D extent,
         VkDescriptorSetLayout descriptor_set_layout,
-        // C++では前方宣言や依存関係を綺麗にするため、外から頂点情報を注入する形が望ましいです
         const VkVertexInputBindingDescription& binding_desc,
         std::span<const VkVertexInputAttributeDescription> attrib_desc
     ) noexcept {

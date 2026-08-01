@@ -8,7 +8,6 @@
 
 namespace rey_engine::render {
 
-    /// バッファ間のデータ転送（One-Time Submit）を同期的に実行します。
     [[nodiscard]] std::expected<void, EngineError> copy_buffer(
         const VulkanContext& context,
         VkCommandPool command_pool,

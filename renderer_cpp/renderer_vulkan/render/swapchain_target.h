@@ -12,7 +12,7 @@
 namespace rey_engine::render {
 
     // ============================================================================
-    // スワップチェーンとその関連リソースを保持する純粋なデータコンテナ (SoAレイアウト)
+    // スワップチェーンとその関連リソースを保持する純粋なデータコンテナ
     // ============================================================================
     struct SwapchainTarget {
         VkSwapchainKHR swapchain{VK_NULL_HANDLE};
@@ -32,8 +32,6 @@ namespace rey_engine::render {
 
         VkRenderPass render_pass{VK_NULL_HANDLE};
 
-        // per-image リソースを (image, view, framebuffer) の組として
-        // 一括イテレートするためのビュー。コピーも所有もしない。
         [[nodiscard]] auto image_resources() const noexcept {
             return std::views::zip(images, image_views, framebuffers);
         }

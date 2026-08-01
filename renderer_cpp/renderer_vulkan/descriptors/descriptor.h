@@ -12,7 +12,6 @@ namespace rey_engine::render {
     // ============================================================================
     // 1. DTO (Uniform Buffer Object)
     // ============================================================================
-    // Rustの #[repr(C, align(16))] に対応
     struct alignas(16) GlobalUbo {
         glm::mat4 view_proj;
         glm::vec3 camera_pos;

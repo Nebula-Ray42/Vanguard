@@ -10,20 +10,14 @@ namespace rey_engine::render {
 
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 
-// 描画の同期（セマフォ・フェンス）とコマンドバッファを管理するコンテキスト
-// データ指向（DOP）の観点から、状態を持つ純粋なデータコンテナとして定義します
 struct SyncContext {
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
     VkCommandPool command_pool{VK_NULL_HANDLE};
     std::vector<VkCommandBuffer> command_buffers;
-
-    // Rustの `Cell<usize>` に相当。
-    // C++では、利用側（システム）で非const参照（`SyncContext&`）として受け取ることで状態更新を表現します
     size_t current_frame{0};
 
-    // 同期オブジェクトとコマンドプールを初期化 (例外を投げず std::expected で安全に返す)
     [[nodiscard]] static std::expected<SyncContext, EngineError> create(
         VkDevice device,
         uint32_t queue_family_index,
@@ -87,10 +81,7 @@ struct SyncContext {
         return ctx;
     }
 
-    // 同期オブジェクトとコマンドプールを破棄します。
-    // GPUが待機状態（Idle）である前提
     void destroy(VkDevice device) const noexcept {
-        // コマンドプールを破棄すると、割り当てられたコマンドバッファも自動的に一括解放される
         if (command_pool != VK_NULL_HANDLE) {
             vkDestroyCommandPool(device, command_pool, nullptr);
         }

@@ -6,7 +6,6 @@ namespace rey_engine::render {
     // UBO用のレイアウト作成
     // ------------------------------------------------------------------
     std::expected<VkDescriptorSetLayout, EngineError> create_global_ubo_layout(VkDevice device) {
-        // 先ほどClangdの設定で省略警告を消したので、Rustのように必要な項目だけを綺麗に書けます
         const VkDescriptorSetLayoutBinding ubo_layout_binding{
             .binding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,

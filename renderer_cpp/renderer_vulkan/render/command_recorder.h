@@ -27,7 +27,6 @@ public:
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &buffer.buffer, &offset);
     }
 
-    // Rustの &[vk::Viewport] は C++23の std::span<const VkViewport> でゼロコピー受け取り
     [[gnu::always_inline]] inline
     void set_viewport(uint32_t first_viewport, std::span<const VkViewport> viewports) const noexcept {
         vkCmdSetViewport(command_buffer, first_viewport, static_cast<uint32_t>(viewports.size()), viewports.data());
@@ -74,7 +73,6 @@ public:
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 
-    // Bindless Architecture の要。ディスクリプタのインデックス群を std::span<const std::byte> で安全に転送
     [[gnu::always_inline]] inline
     void push_constants(
         VkPipelineLayout layout,

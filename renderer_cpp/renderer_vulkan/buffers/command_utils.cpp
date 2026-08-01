@@ -9,7 +9,6 @@ namespace rey_engine::render {
         VkBuffer dst_buffer,
         VkDeviceSize size)
     {
-        // 1. 割り当て設定 (C++20 指示付き初期化)
         const VkCommandBufferAllocateInfo alloc_info{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .commandPool = command_pool,
@@ -29,7 +28,6 @@ namespace rey_engine::render {
         };
 
         if (vkBeginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
-            // エラー時は確保したバッファを解放して返すのが安全
             vkFreeCommandBuffers(context.device, command_pool, 1, &command_buffer);
             return std::unexpected(LegacyError("コマンドバッファの開始に失敗"));
         }

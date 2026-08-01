@@ -8,7 +8,7 @@
 namespace rey_engine::render {
 
 // ============================================================================
-// 前準備: 依存する他のエラードメイン
+// 依存する他のエラードメイン
 // ============================================================================
 // TODO 後ほど render_pass_error.h などに分割するまでの「一時的な避難所」
 struct RenderPassError {
@@ -16,7 +16,7 @@ struct RenderPassError {
 };
 
 // ============================================================================
-// 1. SwapchainError の定義 (Rustのenumの再現)
+// 1. SwapchainError の定義
 // ============================================================================
 // 各バリアント（列挙子）が持つデータ（ペイロード）を独立した構造体として定義します。
 namespace swapchain_error {
@@ -37,7 +37,6 @@ namespace swapchain_error {
     struct CreateFramebuffer   { std::string message; };
 }
 
-// std::variant を使って「これらのうちのどれか1つ」を表現します
 using SwapchainError = std::variant<
     swapchain_error::QueryCapabilities,
     swapchain_error::QueryFormats,
@@ -52,7 +51,7 @@ using SwapchainError = std::variant<
 >;
 
 // ============================================================================
-// 2. エラー文字列化 (Rustの thiserror / Display トレイトの代替)
+// 2. エラー文字列化
 // ============================================================================
 // パターンマッチング（std::visit）を使って、エラーの型ごとにメッセージを生成します。
 inline std::string to_string(const SwapchainError& error) {
@@ -95,7 +94,7 @@ using EngineError = std::variant<
     SwapchainError
 >;
 
-// EngineError用の to_string (委譲)
+// EngineError用の to_string
 inline std::string to_string(const EngineError& error) {
     return std::visit([]<typename T0>(const T0& e) -> std::string {
         using T = std::decay_t<T0>;

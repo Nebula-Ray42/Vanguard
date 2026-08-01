@@ -11,7 +11,6 @@
 
 namespace rey_engine::render {
 
-    // bytemuck::Pod 相当の制約: GPUへそのままコピー可能な型
     template <typename T>
     concept GpuPodLike = std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>;
 
@@ -81,7 +80,7 @@ namespace rey_engine::render {
         return *device;
     }
 
-    // 2. 既存バッファへ単発でデータを書き込む (Uniform Buffer更新など)
+    // 2. 既存バッファへ単発でデータを書き込む
     template <GpuPodLike T>
     [[nodiscard]] std::expected<void, EngineError> update_buffer_data(
         const VulkanContext& context,
