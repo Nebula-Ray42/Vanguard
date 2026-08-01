@@ -1,0 +1,73 @@
+Checks:
+    - -*
+    # --- 基礎的なバグ検知 ---
+    - bugprone-use-after-move
+    - bugprone-exception-escape # FDM: 例外(Exception)の漏出を警告し、std::expectedによる型安全なエラー処理を強制する
+    # --- FP (関数型・不変性) ---
+    - misc-const-correctness # FP: Rustのデフォルト不変（let）を再現。変更不要な変数をすべてconstにするよう警告
+    - readability-make-member-function-const # FP: 状態を変更しない関数を純粋関数（const）として扱うよう警告
+    - cppcoreguidelines-avoid-non-const-global-variables # FP: 副作用を生むグローバルな可変状態を禁止
+    # --- DOD (パフォーマンス・メモリ効率) ---
+    - performance-* # DOD: 不要なコピー（値渡し）や、メモリ再確保の無駄などを包括的に検知
+    - -performance-inefficient-string-concatenation # （※必要に応じて一部の重すぎるチェックは除外）
+    # --- モダンC++の適用 ---
+    - modernize-deprecated-headers
+    - modernize-redundant-void-arg
+    - modernize-use-bool-literals
+    - modernize-use-default-member-init
+    - modernize-use-nullptr
+    # --- 可読性・フォーマット ---
+    - readability-braces-around-statements
+    - readability-identifier-naming
+    - readability-operators-representation
+    - readability-redundant-member-init
+    - -bugprone-missing-field-initializers
+    - -cppcoreguidelines-pro-type-member-init
+
+HeaderFileExtensions: ["", h, hh, hpp, hxx, inc, glsl]
+ImplementationFileExtensions: [c, cc, cpp, cxx, m, mm, java]
+# 自分のプロジェクトのソースパスに合わせて正規表現を調整してください
+HeaderFilterRegex: .*(rey_engine|renderer_vulkan)/.*
+FormatStyle: file
+
+CheckOptions:
+    # ---------------------------------------------------------
+    # Rustライクな命名規則 (DODにおけるデータコンテナと関数の区別)
+    # ---------------------------------------------------------
+    # 関数・メソッド・変数はすべて snake_case
+    - key:             readability-identifier-naming.FunctionCase
+      value:           snake_case
+    - key:             readability-identifier-naming.MethodCase
+      value:           snake_case
+    - key:             readability-identifier-naming.VariableCase
+      value:           snake_case
+    - key:             readability-identifier-naming.ParameterCase
+      value:           snake_case
+
+    # 型 (Struct, Class, Enum) は CamelCase (Rustの構造体と同じ)
+    - key:             readability-identifier-naming.StructCase
+      value:           CamelCase
+    - key:             readability-identifier-naming.ClassCase
+      value:           CamelCase
+    - key:             readability-identifier-naming.EnumCase
+      value:           CamelCase
+
+    # ---------------------------------------------------------
+    # FP / DOD 向けの振る舞い設定
+    # ---------------------------------------------------------
+    - key:             modernize-use-default-member-init.IgnoreMacros
+      value:           false
+    - key:             modernize-use-default-member-init.UseAssignment
+      value:           true
+
+    # ---------------------------------------------------------
+    # その他レガシー設定
+    # ---------------------------------------------------------
+    - key:             modernize-deprecated-headers.CheckHeaderFile
+      value:           true
+    - key:             modernize-use-bool-literals.IgnoreMacros
+      value:           false
+    - key:             readability-operators-representation.BinaryOperators
+      value:           "&&;&=;&;|;~;!;!=;||;|=;^;^="
+    - key:             readability-operators-representation.OverloadedOperators
+      value:           "&&;&=;&;|;~;!;!=;||;|=;^;^="

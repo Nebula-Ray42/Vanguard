@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/Users/sakakibarayuto/rey_engine/target/debug/build/render_api-aff023d91a1aa685/out/build",
-  "command": "/usr/bin/c++  -I/Users/sakakibarayuto/rey_engine/renderer_cpp/include  -I/opt/homebrew/include -ffunction-sections -fdata-sections -fPIC --target=arm64-apple-macosx -mmacosx-version-min=26.4.1 -w -g -std=c++23 -arch arm64 -Wall -Wextra -Wpedantic -o CMakeFiles/rey_renderer.dir/vulkan/renderer_vulkan.cpp.o -c /Users/sakakibarayuto/rey_engine/renderer_cpp/vulkan/renderer_vulkan.cpp",
-  "file": "/Users/sakakibarayuto/rey_engine/renderer_cpp/vulkan/renderer_vulkan.cpp",
-  "output": "CMakeFiles/rey_renderer.dir/vulkan/renderer_vulkan.cpp.o"
-}
-]

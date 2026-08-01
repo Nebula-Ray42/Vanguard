@@ -1,0 +1,80 @@
+#pragma once
+
+#include <vulkan/vulkan.h>
+#include <vector>
+#include <expected>
+
+#include "engine_error.h"
+#include "buffers/buffer.h"
+#include "include/render_types.h"
+#include "renderer_vulkan/pipeline/vulkan_context.h"
+#include "renderer_vulkan/pipeline/sync_context.h"
+#include "renderer_vulkan/pipeline/pipeline.h"
+#include "renderer_vulkan/render/swapchain_target.h"
+#include "renderer_vulkan/render/command_recorder.h"
+#include "renderer_vulkan/buffers/command_utils.h"
+#include "renderer_vulkan/descriptors/descriptor.h"
+
+namespace rey_engine::render {
+
+    struct ActiveFrame {
+        CommandRecorder recorder;
+        uint32_t image_index{0};
+        uint32_t frame_index{0};
+    };
+
+    /// GPUに転送済みのメッシュデータ
+    struct GpuMesh {
+        GpuBuffer vertex_buffer;
+        GpuBuffer index_buffer;
+        uint32_t index_count;
+    };
+
+    class VulkanRenderer {
+    public:
+        // Rustの `new` に相当するファクトリメソッド
+        [[nodiscard]] static std::expected<VulkanRenderer, EngineError> create(
+            const char* app_name,
+            void* window_handle, // OSごとのウィンドウハンドル (GLFWwindow* など)
+            uint32_t window_width,
+            uint32_t window_height);
+
+        // Rustの `Drop` に相当するデストラクタ
+        ~VulkanRenderer();
+
+        // ムーブセマンティクスの明示（リソースの二重解放を防ぐためコピーは禁止）
+        VulkanRenderer(VulkanRenderer&& other) noexcept;
+        VulkanRenderer& operator=(VulkanRenderer&& other) noexcept;
+        VulkanRenderer(const VulkanRenderer&) = delete;
+        VulkanRenderer& operator=(const VulkanRenderer&) = delete;
+
+        // メインAPI
+        [[nodiscard]] std::expected<MeshId, EngineError> create_mesh_from_data(const MeshData& data);
+        [[nodiscard]] std::expected<void, EngineError> draw_frame(const RenderSnapshot& snapshot);
+
+    private:
+        // 内部利用専用のデフォルトコンストラクタ（createから呼ばれる）
+        VulkanRenderer() = default;
+
+        [[nodiscard]] std::expected<ActiveFrame, EngineError> begin_frame();
+        [[nodiscard]] std::expected<void, EngineError> end_frame(const ActiveFrame& active_frame);
+        [[nodiscard]] std::expected<void, EngineError> initialize_descriptor_resources();
+        [[nodiscard]] std::expected<void, EngineError> initialize_pipeline_resources();
+        [[nodiscard]] static GlobalUbo build_global_ubo(const RenderSnapshot& snapshot);
+
+        // --- サブシステム群 ---
+        VulkanContext context_;
+        SwapchainTarget swapchain_target_;
+        GraphicsPipeline pipeline_;
+        SyncContext sync_;
+
+        std::vector<GpuMesh> meshes_;
+
+        // --- Descriptor 関連 ---
+        GpuBuffer global_ubo_buffer_;
+        VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
+        VkDescriptorSetLayout descriptor_set_layout_{VK_NULL_HANDLE};
+        VkDescriptorSet global_descriptor_set_{VK_NULL_HANDLE};
+    };
+
+} // namespace rey_engine::render
