@@ -13,10 +13,6 @@ namespace rey_engine::render {
 
 namespace {
 
-    // ------------------------------------------------------------------
-    // 選択ロジック
-    // ------------------------------------------------------------------
-
     VkSurfaceFormatKHR select_surface_format(std::span<const VkSurfaceFormatKHR> formats) {
         const auto it = std::ranges::find_if(formats, [](const VkSurfaceFormatKHR& f) {
             return f.format == VK_FORMAT_B8G8R8A8_SRGB
@@ -69,10 +65,6 @@ namespace {
             swapchain_error::CreateDepthResource{"適合するメモリタイプが見つかりません"}}});
     }
 
-    // ------------------------------------------------------------------
-    // 各生成ステップの中間結果
-    // ------------------------------------------------------------------
-
     struct SwapchainCreateResult {
         VkSwapchainKHR swapchain;
         VkFormat format;
@@ -85,10 +77,6 @@ namespace {
         VkDeviceMemory memory;
         VkImageView view;
     };
-
-    // ------------------------------------------------------------------
-    // 1. Swapchain本体
-    // ------------------------------------------------------------------
 
     std::expected<SwapchainCreateResult, EngineError> create_swapchain_internal(
         const VulkanContext& context, uint32_t width, uint32_t height)
@@ -164,10 +152,6 @@ namespace {
         };
     }
 
-    // ------------------------------------------------------------------
-    // 2. Swapchain画像の取得
-    // ------------------------------------------------------------------
-
     std::expected<std::vector<VkImage>, EngineError> get_swapchain_images(
         const VkDevice device, const VkSwapchainKHR swapchain)
     {
@@ -180,10 +164,6 @@ namespace {
         vkGetSwapchainImagesKHR(device, swapchain, &count, images.data());
         return images;
     }
-
-    // ------------------------------------------------------------------
-    // 3. ImageView群 (SoA: images[i] -> image_views[i])
-    // ------------------------------------------------------------------
 
     std::expected<std::vector<VkImageView>, EngineError> create_image_views(
         const VkDevice device, const VkFormat format, const std::span<const VkImage> images)
@@ -215,10 +195,6 @@ namespace {
         }
         return views;
     }
-
-    // ------------------------------------------------------------------
-    // 4. Depthリソース
-    // ------------------------------------------------------------------
 
     std::expected<DepthResources, EngineError> create_depth_resources(
         const VulkanContext& context, const VkExtent2D extent)
@@ -298,10 +274,6 @@ namespace {
             });
     }
 
-    // ------------------------------------------------------------------
-    // 5. RenderPass
-    // ------------------------------------------------------------------
-
     std::expected<VkRenderPass, EngineError> create_render_pass(
         const VkDevice device, const VkFormat color_format, const VkFormat depth_format)
     {
@@ -376,10 +348,6 @@ namespace {
         return render_pass;
     }
 
-    // ------------------------------------------------------------------
-    // 6. Framebuffer群 (SoA: image_views[i] -> framebuffers[i])
-    // ------------------------------------------------------------------
-
     std::expected<std::vector<VkFramebuffer>, EngineError> create_framebuffers(
         const VkDevice device, const VkRenderPass render_pass, const VkExtent2D extent,
         const std::span<const VkImageView> image_views, const VkImageView depth_view)
@@ -409,11 +377,8 @@ namespace {
         return framebuffers;
     }
 
-} // namespace anonymous
+}  // namespace
 
-// ============================================================================
-// メインの生成オーケストレーター
-// ============================================================================
 std::expected<SwapchainTarget, EngineError> create_swapchain_target(
     const VulkanContext& context, uint32_t width, uint32_t height)
 {
@@ -451,11 +416,7 @@ std::expected<SwapchainTarget, EngineError> create_swapchain_target(
     };
 }
 
-// ============================================================================
-// 破棄処理
-// ============================================================================
 void SwapchainTarget::destroy(const VkDevice device) const noexcept {
-    // image_view と framebuffer は 1:1 対応するので zip で1ループにまとめる
     for (auto&& [view, fb] : std::views::zip(image_views, framebuffers)) {
         vkDestroyFramebuffer(device, fb, nullptr);
         vkDestroyImageView(device, view, nullptr);

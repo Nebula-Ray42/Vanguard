@@ -7,18 +7,11 @@
 
 namespace rey_engine::render {
 
-// ============================================================================
-// 依存する他のエラードメイン
-// ============================================================================
 // TODO 後ほど render_pass_error.h などに分割するまでの「一時的な避難所」
 struct RenderPassError {
     std::string message;
 };
 
-// ============================================================================
-// 1. SwapchainError の定義
-// ============================================================================
-// 各バリアント（列挙子）が持つデータ（ペイロード）を独立した構造体として定義します。
 namespace swapchain_error {
     struct QueryCapabilities { VkResult result; };
     struct QueryFormats      { VkResult result; };
@@ -51,10 +44,6 @@ using SwapchainError = std::variant<
     swapchain_error::CreateFramebuffer
 >;
 
-// ============================================================================
-// 2. エラー文字列化
-// ============================================================================
-// パターンマッチング（std::visit）を使って、エラーの型ごとにメッセージを生成します。
 inline std::string to_string(const SwapchainError& error) {
     return std::visit([]<typename T0>(const T0& e) -> std::string {
         using T = std::decay_t<T0>;
@@ -84,10 +73,6 @@ inline std::string to_string(const SwapchainError& error) {
     }, error);
 }
 
-// ============================================================================
-// 3. 統合された EngineError の定義
-// ============================================================================
-// 既存のレガシーエラーと、今回のドメイン特化エラーを束ねます。
 struct LegacyError { std::string message; };
 
 using EngineError = std::variant<
@@ -95,7 +80,6 @@ using EngineError = std::variant<
     SwapchainError
 >;
 
-// EngineError用の to_string
 inline std::string to_string(const EngineError& error) {
     return std::visit([]<typename T0>(const T0& e) -> std::string {
         using T = std::decay_t<T0>;

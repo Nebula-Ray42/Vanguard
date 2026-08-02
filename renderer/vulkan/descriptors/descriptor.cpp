@@ -3,9 +3,6 @@
 
 namespace rey_engine::render {
 
-    // ------------------------------------------------------------------
-    // UBO用のレイアウト作成
-    // ------------------------------------------------------------------
     std::expected<VkDescriptorSetLayout, EngineError> create_global_ubo_layout(VkDevice device) {
         constexpr VkDescriptorSetLayoutBinding ubo_layout_binding{
             .binding = 0,
@@ -28,9 +25,6 @@ namespace rey_engine::render {
         return layout;
     }
 
-    // ------------------------------------------------------------------
-    // プールの作成
-    // ------------------------------------------------------------------
     std::expected<VkDescriptorPool, EngineError> create_descriptor_pool(const VulkanContext& context) {
         constexpr VkDescriptorPoolSize pool_size{
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -52,9 +46,6 @@ namespace rey_engine::render {
         return pool;
     }
 
-    // ------------------------------------------------------------------
-    // ディスクリプタセットの確保と書き込み
-    // ------------------------------------------------------------------
     std::expected<VkDescriptorSet, EngineError> create_descriptor_set(
         const VulkanContext& context,
         VkDescriptorPool pool,

@@ -2,7 +2,7 @@
 #include <slang.h>
 #include <expected>
 #include <string>
-#include <string_view> // 追加
+#include <string_view>
 
 namespace rey_engine::slang_generator {
 

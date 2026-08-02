@@ -16,9 +16,6 @@ namespace rey_engine::render {
     template <typename T>
     concept GpuPodLike = std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>;
 
-    // ============================================================================
-    // 内部用ヘルパー関数 (buffer.cpp で実装)
-    // ============================================================================
     [[nodiscard]] std::expected<GpuBuffer, EngineError> create_buffer(
         const VulkanContext& context,
         VkDeviceSize size,
@@ -32,11 +29,6 @@ namespace rey_engine::render {
         VkBuffer dst,
         VkDeviceSize size);
 
-    // ============================================================================
-    // テンプレート関数群 (ヘッダー実装)
-    // ============================================================================
-
-    // 1. Staging Buffer を経由して GPU の Device Local メモリに配置する
     template <GpuPodLike T>
     [[nodiscard]] std::expected<GpuBuffer, EngineError> create_device_local_buffer(
         const VulkanContext& context,
@@ -47,7 +39,6 @@ namespace rey_engine::render {
         const VkDeviceSize size = static_cast<VkDeviceSize>(sizeof(T) * data.size());
         if (size == 0) { return std::unexpected(EngineError{LegacyError{"データサイズ0"}}); }
 
-        // 1. Staging Buffer を確保
         constexpr VmaAllocationCreateInfo staging_alloc_info{
             .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO,
@@ -55,13 +46,11 @@ namespace rey_engine::render {
         auto staging = create_buffer(context, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, staging_alloc_info);
         if (!staging) { return std::unexpected(staging.error()); }
 
-        // データを流し込む
         if (vmaCopyMemoryToAllocation(context.allocator, data.data(), staging->allocation, 0, size) != VK_SUCCESS) {
             staging->destroy(context);
             return std::unexpected(EngineError{LegacyError{"Staging書き込み失敗"}});
         }
 
-        // 2. Device Local Buffer を確保
         constexpr VmaAllocationCreateInfo device_alloc_info{
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
         };
@@ -71,7 +60,6 @@ namespace rey_engine::render {
             return std::unexpected(device.error());
         }
 
-        // 3. Staging -> Device へのコピーコマンドを発行
         if (auto res = copy_buffer(context, command_pool, staging->buffer, device->buffer, size); !res) {
             staging->destroy(context);
             device->destroy(context);
@@ -82,7 +70,6 @@ namespace rey_engine::render {
         return *device;
     }
 
-    // 2. 既存バッファへ単発でデータを書き込む
     template <GpuPodLike T>
     [[nodiscard]] std::expected<void, EngineError> update_buffer_data(
         const VulkanContext& context,

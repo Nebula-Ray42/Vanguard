@@ -69,7 +69,7 @@ struct GraphicsPipeline {
     VkPipelineLayout layout{VK_NULL_HANDLE};
     VkPipeline pipeline{VK_NULL_HANDLE};
 
-    // 静的ファクトリ関数 (実装は .cpp へ)
+    // 静的ファクトリ関数
     [[nodiscard]] static std::expected<GraphicsPipeline, EngineError> create(
         VkDevice device,
         VkRenderPass render_pass,
@@ -79,7 +79,7 @@ struct GraphicsPipeline {
         std::span<const VkVertexInputAttributeDescription> attrib_desc
     ) noexcept;
 
-    // パイプラインとレイアウトを破棄 (実装は .cpp へ)
+    // パイプラインとレイアウトを破棄
     void destroy(VkDevice device) const noexcept;
 };
 

@@ -6,17 +6,9 @@
 #include <array>
 #include <cstddef>
 
-// ==========================================
-// 1. Value Objects
-// ==========================================
 struct EntityId { uint32_t value; };
 struct MeshId { uint32_t value; };
 
-// ==========================================
-// 2. DTO
-// ==========================================
-
-// 頂点1つ分のデータ
 struct Vertex {
     glm::vec3 position;
     glm::vec3 color;

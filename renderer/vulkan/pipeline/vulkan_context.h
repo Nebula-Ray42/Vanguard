@@ -9,9 +9,6 @@
 
 namespace rey_engine::render {
 
-// ============================================================================
-// 1. GPUバッファコンテナ
-// ============================================================================
 struct GpuBuffer {
     VkBuffer buffer{VK_NULL_HANDLE};
     VmaAllocation allocation{VK_NULL_HANDLE};
@@ -22,9 +19,6 @@ struct GpuBuffer {
     void destroy(const struct VulkanContext& context) noexcept;
 };
 
-// ============================================================================
-// 2. Vulkan コアコンテキスト
-// ============================================================================
 struct VulkanContext {
     VkInstance instance{VK_NULL_HANDLE};
     VkSurfaceKHR surface{VK_NULL_HANDLE};
@@ -55,7 +49,6 @@ struct VulkanContext {
     }
 };
 
-// GpuBuffer::destroy の実装 (VulkanContextの定義後に記述)
 inline void GpuBuffer::destroy(const VulkanContext& context) noexcept {
     if (buffer != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
         vmaDestroyBuffer(context.allocator, buffer, allocation);
@@ -64,9 +57,6 @@ inline void GpuBuffer::destroy(const VulkanContext& context) noexcept {
     }
 }
 
-// ============================================================================
-// 3. ステートレスな操作関数群
-// ============================================================================
 [[nodiscard]] std::expected<VulkanContext, EngineError> create_vulkan_context(
     const char* app_name,
     void* window_handle

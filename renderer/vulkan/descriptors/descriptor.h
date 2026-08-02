@@ -9,18 +9,11 @@
 
 namespace rey_engine::render {
 
-    // ============================================================================
-    // 1. DTO (Uniform Buffer Object)
-    // ============================================================================
     struct alignas(16) GlobalUbo {
         glm::mat4 view_proj;
         glm::vec3 camera_pos;
         float padding;
     };
-
-    // ============================================================================
-    // 2. ステートレスなディスクリプタ操作関数群
-    // ============================================================================
 
     [[nodiscard]] std::expected<VkDescriptorSetLayout, EngineError> create_global_ubo_layout(
         VkDevice device

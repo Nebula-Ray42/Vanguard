@@ -10,7 +10,6 @@
 
 namespace rey_engine::render {
 
-// 描画コマンドを安全に記録するためのラッパー (Layer 4)
 class CommandRecorder {
     public:
         VkDevice device_{VK_NULL_HANDLE};

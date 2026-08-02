@@ -1,13 +1,3 @@
-# Rey Engine .clang-tidy
-# CODING_GUIDELINES.md 各章の「設計思想」をできる限り機械的に強制するための設定。
-#
-# 完全には強制しきれないルールは、その旨をコメントで明記しレビューに委ねる。
-# 例: 「classそのものの禁止」「virtualの禁止」は該当する単体チェックが存在しないため、
-#      コンパイル時の -fno-exceptions のような機械的強制手段はなく、レビューで見る。
-#
-# 対応バージョン: clang-tidy 18以降を推奨。
-# (ConceptCase オプション等、比較的新しいチェックオプションを使用しているため)
-
 Checks: >
     bugprone-*,
     cppcoreguidelines-*,
@@ -47,9 +37,6 @@ WarningsAsErrors: >
     modernize-use-nodiscard,
     bugprone-use-after-move,
     bugprone-dangling-handle
-
-# 上記3つのみ厳格にエラー化している(第3, 4章で明示的に重要度が高いルールのため)。
-# CIの安定運用が進んだら、プロジェクトの判断で対象を広げてよい。
 
 HeaderFilterRegex: '^(?!.*(third_party|vendor|generated)/).*$'
 FormatStyle: file

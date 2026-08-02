@@ -3,9 +3,6 @@
 
 namespace rey_engine::render {
 
-// =====================================================================
-// 内部専用ヘルパー
-// =====================================================================
 namespace {
     [[nodiscard]] std::expected<std::vector<char>, EngineError> read_file(const std::string& filename) noexcept {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -39,10 +36,6 @@ namespace {
         return shader_module;
     }
 } // namespace
-
-// =====================================================================
-// PipelineBuilder の実装
-// =====================================================================
 
 PipelineBuilder::PipelineBuilder() noexcept {
     input_assembly_ = {
@@ -133,10 +126,6 @@ std::expected<VkPipeline, EngineError> PipelineBuilder::build(
     return pipeline;
 }
 
-// =====================================================================
-// GraphicsPipeline の実装
-// =====================================================================
-
 std::expected<GraphicsPipeline, EngineError> GraphicsPipeline::create(
     VkDevice device,
     VkRenderPass render_pass,
@@ -177,7 +166,6 @@ std::expected<GraphicsPipeline, EngineError> GraphicsPipeline::create(
         }
     };
 
-    // 2. 頂点入力の設定
     VkPipelineVertexInputStateCreateInfo const vertex_input{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .vertexBindingDescriptionCount = 1,
@@ -186,7 +174,6 @@ std::expected<GraphicsPipeline, EngineError> GraphicsPipeline::create(
         .pVertexAttributeDescriptions = attrib_desc.data()
     };
 
-    // 3. Viewport (ウィンドウサイズ) の設定
     std::array viewports = { VkViewport{
         .x = 0.0f, .y = 0.0f,
         .width = static_cast<float>(extent.width), .height = static_cast<float>(extent.height),
@@ -238,7 +225,6 @@ std::expected<GraphicsPipeline, EngineError> GraphicsPipeline::create(
         .with_layout(layout)
         .build(device, render_pass);
 
-    // 6. クリーンアップ
     vkDestroyShaderModule(device, vert_module.value(), nullptr);
     vkDestroyShaderModule(device, frag_module.value(), nullptr);
 

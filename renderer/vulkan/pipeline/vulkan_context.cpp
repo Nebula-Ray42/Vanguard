@@ -1,7 +1,6 @@
 #include "vulkan_context.h"
 #include <vector>
 
-// VMAの実装マクロはプロジェクト内のどこか1つの.cppファイルでのみ定義してください
 #define VMA_IMPLEMENTATION
 #include "glfw3.h"
 
@@ -46,18 +45,14 @@ namespace rey_engine::render {
     create_info.ppEnabledLayerNames = validation_layers.data();
 
     if (vkCreateInstance(&create_info, nullptr, &ctx.instance) != VK_SUCCESS) {
-        // ※EngineErrorの実際のコンストラクタに合わせて適宜修正してください
         return std::unexpected(EngineError{});
     }
 
     if (glfwCreateWindowSurface(ctx.instance, static_cast<GLFWwindow*>(window_handle), nullptr, &ctx.surface) != VK_SUCCESS) {
         ctx.destroy();
-        return std::unexpected(EngineError{}); // Surface生成失敗
+        return std::unexpected(EngineError{});
     }
 
-    // ============================================================================
-    // 2. Physical Device の選定
-    // ============================================================================
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(ctx.instance, &device_count, nullptr);
     if (device_count == 0) {
@@ -99,12 +94,6 @@ namespace rey_engine::render {
         return std::unexpected(EngineError{});
     }
 
-    // ============================================================================
-    // 3. Logical Device と Queue の作成
-    // ============================================================================
-    // ============================================================================
-    // 3. Logical Device と Queue の作成
-    // ============================================================================
     float queue_priority = 1.0f;
     VkDeviceQueueCreateInfo queue_create_info{};
     queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -114,7 +103,6 @@ namespace rey_engine::render {
 
     VkPhysicalDeviceFeatures device_features{};
 
-    // 基本の拡張機能
     std::vector<const char*> device_extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
@@ -143,16 +131,11 @@ namespace rey_engine::render {
     // 早期リターンで Always-Valid を担保する
     if (vkCreateDevice(ctx.physical_device, &device_create_info, nullptr, &ctx.device) != VK_SUCCESS) {
         ctx.destroy();
-        // 必要に応じて LegacyError 等のエラーメッセージを付与してください
         return std::unexpected(EngineError{});
     }
 
-    // ここに到達した時点で ctx.device は必ず有効なハンドルとなる
     vkGetDeviceQueue(ctx.device, ctx.graphics_queue_family_index, 0, &ctx.graphics_queue);
 
-    // ============================================================================
-    // 4. VMA (Vulkan Memory Allocator) の初期化
-    // ============================================================================
     VmaAllocatorCreateInfo allocator_info{};
     allocator_info.physicalDevice = ctx.physical_device;
     allocator_info.device = ctx.device;

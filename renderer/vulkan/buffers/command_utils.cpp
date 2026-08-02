@@ -21,7 +21,6 @@ namespace rey_engine::render {
             return std::unexpected(LegacyError("コマンドバッファの割り当てに失敗"));
         }
 
-        // 2. 記録開始設定
         constexpr VkCommandBufferBeginInfo begin_info{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -32,7 +31,6 @@ namespace rey_engine::render {
             return std::unexpected(LegacyError("コマンドバッファの開始に失敗"));
         }
 
-        // 3. コピー実行
         const VkBufferCopy copy_region{
             .srcOffset = 0,
             .dstOffset = 0,
@@ -46,7 +44,6 @@ namespace rey_engine::render {
             return std::unexpected(LegacyError("コマンドバッファの終了に失敗"));
         }
 
-        // 4. キューへの送信と待機
         const VkSubmitInfo submit_info{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .commandBufferCount = 1,
@@ -58,7 +55,6 @@ namespace rey_engine::render {
             return std::unexpected(LegacyError("キューの送信に失敗"));
         }
 
-        // 確実な同期
         if (vkQueueWaitIdle(context.graphics_queue) != VK_SUCCESS) {
             vkFreeCommandBuffers(context.device, command_pool, 1, &command_buffer);
             return std::unexpected(LegacyError("キューの待機中にエラーが発生"));

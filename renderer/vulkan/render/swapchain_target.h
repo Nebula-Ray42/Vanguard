@@ -11,9 +11,6 @@
 
 namespace rey_engine::render {
 
-    // ============================================================================
-    // スワップチェーンとその関連リソースを保持する純粋なデータコンテナ
-    // ============================================================================
     struct SwapchainTarget {
         VkSwapchainKHR swapchain{VK_NULL_HANDLE};
         VkFormat format{VK_FORMAT_UNDEFINED};
@@ -35,13 +32,9 @@ namespace rey_engine::render {
             return std::views::zip(images, image_views, framebuffers);
         }
 
-        // リソースの明示的な破棄
         void destroy(VkDevice device) const noexcept;
     };
 
-    // ============================================================================
-    // ステートレスな構築関数
-    // ============================================================================
     [[nodiscard]] std::expected<SwapchainTarget, EngineError> create_swapchain_target(
         const VulkanContext& context,
         uint32_t width,

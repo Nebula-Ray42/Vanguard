@@ -6,9 +6,6 @@ namespace rey_engine::render {
     struct VulkanContext;
     struct GpuBuffer;
 
-    // ------------------------------------------------------------------
-    // バッファ+アロケーションの確保
-    // ------------------------------------------------------------------
     std::expected<GpuBuffer, EngineError> create_buffer(
         const VulkanContext& context,
         const VkDeviceSize size,
@@ -36,9 +33,6 @@ namespace rey_engine::render {
         };
     }
 
-    // ------------------------------------------------------------------
-    // ワンタイムコマンドバッファでのバッファ間コピー
-    // ------------------------------------------------------------------
     std::expected<void, EngineError> copy_buffer(
         const VulkanContext& context,
         VkCommandPool command_pool,
