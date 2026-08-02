@@ -1,9 +1,84 @@
----
+# Rey Engine .clang-format
+# CODING_GUIDELINES.md 第8章「ビルド・ツールチェーン方針」に基づく設定。
+# ここが担うのは「レイヤー1: 機械的なスタイル」のみ。
+# 命名規則やDOPの設計思想(レイヤー2)は .clang-tidy 側で可能な範囲を強制する。
+#
+# 対応バージョン: clang-format 18以降を推奨(Standard: Latest / 一部の整形挙動が新しい)。
+# 古いバージョンしかない場合は下の `Standard: Latest` を `Standard: c++20` に読み替えること。
+
 Language: Cpp
-BasedOnStyle: LLVM
-Standard: c++20
+BasedOnStyle: Google
+Standard: Latest
+
+# --- 基本レイアウト ---
 IndentWidth: 4
-ColumnLimit: 100
-AllowShortFunctionsOnASingleLine: Empty
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 120           # Vulkanの CreateInfo / span引数は80だと折り返しが多すぎるため拡張
+AccessModifierOffset: -4
+
+# --- ポインタ/参照の位置 ---
+# 第3章: T*(生ポインタ)/ std::span を多用するため、型に密着させる
 PointerAlignment: Left
----
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+# --- 波括弧 ---
+BreakBeforeBraces: Attach
+Cpp11BracedListStyle: true    # 指示付き初期化 { .foo = 1, .bar = 2 } を詰めて整形する
+SpaceBeforeCpp11BracedList: false
+
+# --- ガード節(第4章: Early Return)の一行ifを許可 ---
+# if (!res) return std::unexpected(res.error()); のような早期returnを1行に保つ
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Inline
+
+# --- SoA構造体の可読性(第2章) ---
+# ParticleStorage のような並行配列の宣言/初期化を縦に揃える
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: Consecutive
+AlignTrailingComments: true
+
+# --- テンプレート/Concept(第2章, 第5章) ---
+AlwaysBreakTemplateDeclarations: Yes
+SpaceAfterTemplateKeyword: true
+
+# --- 関数呼び出し引数 ---
+# Vulkanの vkCreateXxx / span引数は詰め込みすぎると可読性が落ちるため無効化
+BinPackArguments: false
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllArgumentsOnNextLine: true
+
+# --- 名前空間(第7章: rey_engine::render 等) ---
+NamespaceIndentation: None
+CompactNamespaces: false
+FixNamespaceComments: true    # } // namespace rey_engine::render を自動補完
+
+# --- #include の整理 ---
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+    - Regex:           '^<(vulkan/vulkan\.h|vk_mem_alloc\.h|slang(-com-ptr)?\.h)>'
+      Priority:        1
+      SortPriority:    1
+    - Regex:           '^<[a-z_]+>$'           # C++標準ライブラリ
+      Priority:        2
+      SortPriority:    2
+    - Regex:           '^"(\.\./)+'             # プロジェクト内、相対パス上位
+      Priority:        3
+      SortPriority:    3
+    - Regex:           '^".*"$'                 # プロジェクト内、同ディレクトリ
+      Priority:        4
+      SortPriority:    4
+
+# --- その他 ---
+IndentCaseLabels: true
+ReflowComments: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+SpaceBeforeParens: ControlStatements
+PenaltyReturnTypeOnItsOwnLine: 1000

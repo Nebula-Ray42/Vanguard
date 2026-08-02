@@ -9,7 +9,7 @@ fn main() {
 
     let project_root = manifest_path.parent().unwrap().parent().unwrap();
 
-    let cpp_dir = project_root.join("renderer_cpp");
+    let cpp_dir = project_root.join("../../renderer");
     let schema_file = project_root.join("schemas/render_command.fbs");
 
     if !schema_file.exists() {

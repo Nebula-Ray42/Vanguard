@@ -1,73 +1,115 @@
-Checks:
-    - -*
-    # --- 基礎的なバグ検知 ---
-    - bugprone-use-after-move
-    - bugprone-exception-escape # FDM: 例外(Exception)の漏出を警告し、std::expectedによる型安全なエラー処理を強制する
-    # --- FP (関数型・不変性) ---
-    - misc-const-correctness # FP: Rustのデフォルト不変（let）を再現。変更不要な変数をすべてconstにするよう警告
-    - readability-make-member-function-const # FP: 状態を変更しない関数を純粋関数（const）として扱うよう警告
-    - cppcoreguidelines-avoid-non-const-global-variables # FP: 副作用を生むグローバルな可変状態を禁止
-    # --- DOD (パフォーマンス・メモリ効率) ---
-    - performance-* # DOD: 不要なコピー（値渡し）や、メモリ再確保の無駄などを包括的に検知
-    - -performance-inefficient-string-concatenation # （※必要に応じて一部の重すぎるチェックは除外）
-    # --- モダンC++の適用 ---
-    - modernize-deprecated-headers
-    - modernize-redundant-void-arg
-    - modernize-use-bool-literals
-    - modernize-use-default-member-init
-    - modernize-use-nullptr
-    # --- 可読性・フォーマット ---
-    - readability-braces-around-statements
-    - readability-identifier-naming
-    - readability-operators-representation
-    - readability-redundant-member-init
-    - -bugprone-missing-field-initializers
-    - -cppcoreguidelines-pro-type-member-init
+# Rey Engine .clang-tidy
+# CODING_GUIDELINES.md 各章の「設計思想」をできる限り機械的に強制するための設定。
+#
+# 完全には強制しきれないルールは、その旨をコメントで明記しレビューに委ねる。
+# 例: 「classそのものの禁止」「virtualの禁止」は該当する単体チェックが存在しないため、
+#      コンパイル時の -fno-exceptions のような機械的強制手段はなく、レビューで見る。
+#
+# 対応バージョン: clang-tidy 18以降を推奨。
+# (ConceptCase オプション等、比較的新しいチェックオプションを使用しているため)
 
-HeaderFileExtensions: ["", h, hh, hpp, hxx, inc, glsl]
-ImplementationFileExtensions: [c, cc, cpp, cxx, m, mm, java]
-# 自分のプロジェクトのソースパスに合わせて正規表現を調整してください
-HeaderFilterRegex: .*(rey_engine|renderer_vulkan)/.*
+Checks: >
+    bugprone-*,
+    cppcoreguidelines-*,
+    modernize-*,
+    performance-*,
+    readability-*,
+    google-*,
+    -cppcoreguidelines-avoid-magic-numbers,
+    -readability-magic-numbers,
+    -cppcoreguidelines-non-private-member-variables-in-classes,
+    -misc-non-private-member-variables-in-classes,
+    -cppcoreguidelines-special-member-functions,
+    -cppcoreguidelines-owning-memory,
+    -modernize-use-trailing-return-type,
+    -google-readability-todo,
+    -readability-identifier-length
+
+# 無効化した項目の理由:
+# - avoid-magic-numbers / magic-numbers:
+#     Vulkanの定数(VK_SUBPASS_EXTERNAL, サイズ計算等)を毎回名前付き定数に
+#     強制すると却ってノイズになるため無効化。意味のある値は第1章のUPPER_SNAKE_CASE定数にする。
+# - non-private-member-variables-in-classes (両方):
+#     第2章「structの全メンバpublic」が前提のため、非private指摘は不要。
+# - special-member-functions:
+#     Vulkanハンドルはコンストラクタ/デストラクタで暗黙管理せず、
+#     destroy()を明示呼び出しする方針(第3章)のため、Rule of 5の強制は不要。
+# - owning-memory:
+#     GSL(gsl::owner<T*>)への依存を新たに増やすことになり、
+#     第8章の「不要な依存を増やさない」方針と衝突するため無効化。
+# - use-trailing-return-type:
+#     ガイドラインが明示的に要求していないスタイル選択のため強制しない。
+# - readability-identifier-length:
+#     座標(x, y)やループインデックス等、低レイヤーでは短い名前が
+#     慣用的でありノイズになるため無効化。
+
+WarningsAsErrors: >
+    modernize-use-nodiscard,
+    bugprone-use-after-move,
+    bugprone-dangling-handle
+
+# 上記3つのみ厳格にエラー化している(第3, 4章で明示的に重要度が高いルールのため)。
+# CIの安定運用が進んだら、プロジェクトの判断で対象を広げてよい。
+
+HeaderFilterRegex: '^(?!.*(third_party|vendor|generated)/).*$'
 FormatStyle: file
 
 CheckOptions:
-    # ---------------------------------------------------------
-    # Rustライクな命名規則 (DODにおけるデータコンテナと関数の区別)
-    # ---------------------------------------------------------
-    # 関数・メソッド・変数はすべて snake_case
-    - key:             readability-identifier-naming.FunctionCase
-      value:           snake_case
-    - key:             readability-identifier-naming.MethodCase
-      value:           snake_case
-    - key:             readability-identifier-naming.VariableCase
-      value:           snake_case
-    - key:             readability-identifier-naming.ParameterCase
-      value:           snake_case
-
-    # 型 (Struct, Class, Enum) は CamelCase (Rustの構造体と同じ)
-    - key:             readability-identifier-naming.StructCase
-      value:           CamelCase
-    - key:             readability-identifier-naming.ClassCase
-      value:           CamelCase
-    - key:             readability-identifier-naming.EnumCase
-      value:           CamelCase
-
-    # ---------------------------------------------------------
-    # FP / DOD 向けの振る舞い設定
-    # ---------------------------------------------------------
-    - key:             modernize-use-default-member-init.IgnoreMacros
-      value:           false
-    - key:             modernize-use-default-member-init.UseAssignment
-      value:           true
-
-    # ---------------------------------------------------------
-    # その他レガシー設定
-    # ---------------------------------------------------------
-    - key:             modernize-deprecated-headers.CheckHeaderFile
-      value:           true
-    - key:             modernize-use-bool-literals.IgnoreMacros
-      value:           false
-    - key:             readability-operators-representation.BinaryOperators
-      value:           "&&;&=;&;|;~;!;!=;||;|=;^;^="
-    - key:             readability-operators-representation.OverloadedOperators
-      value:           "&&;&=;&;|;~;!;!=;||;|=;^;^="
+    - key: readability-identifier-naming.NamespaceCase
+      value: lower_case
+    - key: readability-identifier-naming.StructCase
+      value: CamelCase
+    - key: readability-identifier-naming.ClassCase
+      value: CamelCase
+    - key: readability-identifier-naming.EnumCase
+      value: CamelCase
+    - key: readability-identifier-naming.EnumConstantCase
+      value: UPPER_CASE
+    - key: readability-identifier-naming.ConceptCase
+      value: CamelCase
+    - key: readability-identifier-naming.TypeAliasCase
+      value: CamelCase
+    - key: readability-identifier-naming.TypedefCase
+      value: CamelCase
+    - key: readability-identifier-naming.TemplateParameterCase
+      value: CamelCase
+    - key: readability-identifier-naming.FunctionCase
+      value: lower_case
+    - key: readability-identifier-naming.VariableCase
+      value: lower_case
+    - key: readability-identifier-naming.ParameterCase
+      value: lower_case
+    - key: readability-identifier-naming.MemberCase
+      value: lower_case
+    - key: readability-identifier-naming.PublicMemberCase
+      value: lower_case
+    - key: readability-identifier-naming.PrivateMemberCase
+      value: lower_case
+    - key: readability-identifier-naming.PrivateMemberSuffix
+      value: '_'
+    - key: readability-identifier-naming.ProtectedMemberCase
+      value: lower_case
+    - key: readability-identifier-naming.ProtectedMemberSuffix
+      value: '_'
+    - key: readability-identifier-naming.ConstexprVariableCase
+      value: UPPER_CASE
+    - key: readability-identifier-naming.GlobalConstantCase
+      value: UPPER_CASE
+    - key: readability-identifier-naming.StaticConstantCase
+      value: UPPER_CASE
+    - key: readability-identifier-naming.MacroDefinitionCase
+      value: UPPER_CASE
+    - key: modernize-use-nodiscard.ReplacementString
+      value: '[[nodiscard]]'
+    - key: modernize-loop-convert.MinConfidence
+      value: reasonable
+    - key: modernize-loop-convert.MaxCopySize
+      value: '16'
+    - key: readability-function-cognitive-complexity.Threshold
+      value: '25'
+    - key: bugprone-narrowing-conversions.WarnOnIntegerNarrowingConversion
+      value: 'true'
+    - key: bugprone-narrowing-conversions.WarnOnFloatingPointNarrowingConversion
+      value: 'true'
+    - key: bugprone-narrowing-conversions.PedanticMode
+      value: 'false'

@@ -31,9 +31,10 @@ struct Entity {
 // ==========================================
 // 2. 外部からのデータ受け入れ口
 // ==========================================
-
 struct GlobalUbo {
     float4x4 viewProj;
+    float3 cameraPos;
+    float _padding;
 };
 
 [[vk::binding(0, 0)]]
