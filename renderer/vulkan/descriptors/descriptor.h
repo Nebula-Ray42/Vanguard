@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <expected>
 
-#include "vulkan/pipeline/vulkan_context.h"
+#include "../core/vulkan_context.h"
 #include "include/engine_error.h"
 
 namespace rey_engine::render {
@@ -29,5 +29,27 @@ namespace rey_engine::render {
         VkDescriptorSetLayout layout,
         VkBuffer ubo_buffer
     );
+
+    class BindlessDescriptorLayout {
+    public:
+        [[nodiscard]] static std::expected<VkDescriptorSetLayout, EngineError> create(VkDevice device) noexcept;
+
+        static void destroy(VkDevice device, VkDescriptorSetLayout layout) noexcept;
+    };
+
+    class BindlessDescriptorManager {
+    public:
+        // Bindless用の特殊なフラグを持ったPoolを作成
+        [[nodiscard]] static std::expected<VkDescriptorPool, EngineError> create_pool(VkDevice device) noexcept;
+
+        // Poolの破棄
+        static void destroy_pool(VkDevice device, VkDescriptorPool pool) noexcept;
+
+        // エンジン全体で1つだけ使用する巨大なSetを確保
+        [[nodiscard]] static std::expected<VkDescriptorSet, EngineError> allocate_set(
+            VkDevice device,
+            VkDescriptorPool pool,
+            VkDescriptorSetLayout layout) noexcept;
+    };
 
 } // namespace rey_engine::render

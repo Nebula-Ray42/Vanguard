@@ -1,5 +1,5 @@
 #include "descriptor.h"
-#include "vulkan/pipeline/vulkan_context.h"
+#include "core/vulkan_context.h"
 
 namespace rey_engine::render {
 
@@ -84,5 +84,124 @@ namespace rey_engine::render {
 
         return descriptor_set;
     }
+
+    std::expected<VkDescriptorSetLayout, EngineError> BindlessDescriptorLayout::create(VkDevice device) noexcept {
+    // 最新のGPUなら10万以上のリソースを登録可能。これがDODの基盤になる。
+    constexpr uint32_t MAX_BINDLESS_RESOURCES = 100000;
+
+    // Binding 0: テクスチャの巨大な配列
+    // Binding 1: ストレージバッファ(SSBO)の巨大な配列
+    std::array bindings = {
+        VkDescriptorSetLayoutBinding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = MAX_BINDLESS_RESOURCES,
+            .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
+            .pImmutableSamplers = nullptr
+        },
+        VkDescriptorSetLayoutBinding{
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount = MAX_BINDLESS_RESOURCES,
+            .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
+            .pImmutableSamplers = nullptr
+        }
+    };
+
+    // 各BindingにBindless用のフラグを付与する
+        std::array<VkDescriptorBindingFlags, 2> binding_flags = {
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+        };
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_info{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+        .pNext = nullptr,
+        .bindingCount = static_cast<uint32_t>(binding_flags.size()),
+        .pBindingFlags = binding_flags.data(),
+    };
+
+    // レイアウト全体の作成設定
+    VkDescriptorSetLayoutCreateInfo layout_info{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext = &flags_info, // ★ フラグ情報を連結
+        // ★ Bindless用のプールから割り当てるためのフラグ
+        .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+        .bindingCount = static_cast<uint32_t>(bindings.size()),
+        .pBindings = bindings.data()
+    };
+
+    VkDescriptorSetLayout layout;
+    if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &layout) != VK_SUCCESS) {
+        return std::unexpected(EngineError{LegacyError{"Bindless DescriptorLayoutの作成に失敗しました"}});
+    }
+
+    return layout;
+}
+
+    std::expected<VkDescriptorPool, EngineError> BindlessDescriptorManager::create_pool(VkDevice device) noexcept {
+    // Layoutで定義したのと同じ最大数を指定する
+    constexpr uint32_t MAX_BINDLESS_RESOURCES = 100000;
+
+    std::array<VkDescriptorPoolSize, 2> pool_sizes = {
+        VkDescriptorPoolSize{
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = MAX_BINDLESS_RESOURCES,
+        },
+        VkDescriptorPoolSize{
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount = MAX_BINDLESS_RESOURCES,
+        }
+    };
+
+    VkDescriptorPoolCreateInfo const pool_info{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+        .maxSets = 1, // エンジン全体で1つの巨大なSetしか使わないので 1
+        .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
+        .pPoolSizes = pool_sizes.data()
+    };
+
+    VkDescriptorPool pool{};
+    if (vkCreateDescriptorPool(device, &pool_info, nullptr, &pool) != VK_SUCCESS) {
+        return std::unexpected(EngineError{LegacyError{"Bindless DescriptorPoolの作成に失敗しました"}});
+    }
+
+    return pool;
+}
+
+void BindlessDescriptorManager::destroy_pool(VkDevice device, VkDescriptorPool pool) noexcept {
+    if (pool != VK_NULL_HANDLE) {
+        vkDestroyDescriptorPool(device, pool, nullptr);
+    }
+}
+
+std::expected<VkDescriptorSet, EngineError> BindlessDescriptorManager::allocate_set(
+    VkDevice device,
+    VkDescriptorPool pool,
+    VkDescriptorSetLayout layout) noexcept
+{
+    VkDescriptorSetAllocateInfo const alloc_info{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .descriptorPool = pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &layout
+    };
+
+    VkDescriptorSet set{};
+    if (vkAllocateDescriptorSets(device, &alloc_info, &set) != VK_SUCCESS) {
+        return std::unexpected(EngineError{LegacyError{"Bindless DescriptorSetの確保に失敗しました"}});
+    }
+
+    return set;
+}
+
+void BindlessDescriptorLayout::destroy(VkDevice device, VkDescriptorSetLayout layout) noexcept {
+    if (layout != VK_NULL_HANDLE) {
+        vkDestroyDescriptorSetLayout(device, layout, nullptr);
+    }
+}
 
 } // namespace rey_engine::render

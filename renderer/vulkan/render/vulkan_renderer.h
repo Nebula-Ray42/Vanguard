@@ -6,11 +6,11 @@
 
 #include "engine_error.h"
 #include "include/render_types.h"
-#include "vulkan/pipeline/vulkan_context.h"
-#include "vulkan/pipeline/sync_context.h"
+#include "../core/vulkan_context.h"
+#include "../core/sync_context.h"
 #include "vulkan/pipeline/pipeline.h"
 #include "vulkan/render/swapchain_target.h"
-#include "vulkan/render/command_recorder.h"
+#include "../commands/command_recorder.h"
 #include "vulkan/descriptors/descriptor.h"
 
 namespace rey_engine::render {
@@ -69,6 +69,16 @@ namespace rey_engine::render {
         VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
         VkDescriptorSetLayout descriptor_set_layout_{VK_NULL_HANDLE};
         VkDescriptorSet global_descriptor_set_{VK_NULL_HANDLE};
+
+        // UBO用 (Set 0)
+        VkDescriptorSetLayout ubo_layout_ = VK_NULL_HANDLE;
+        VkDescriptorPool ubo_pool_ = VK_NULL_HANDLE;
+        VkDescriptorSet global_ubo_set_ = VK_NULL_HANDLE;
+
+        // Bindless用 (Set 1)
+        VkDescriptorSetLayout bindless_layout_ = VK_NULL_HANDLE;
+        VkDescriptorPool bindless_pool_ = VK_NULL_HANDLE;
+        VkDescriptorSet global_bindless_set_ = VK_NULL_HANDLE;
     };
 
 } // namespace rey_engine::render

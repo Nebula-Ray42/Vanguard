@@ -6,7 +6,7 @@
 #include <ranges>
 #include <expected>
 
-#include "vulkan/pipeline/vulkan_context.h"
+#include "../core/vulkan_context.h"
 #include "engine_error.h"
 
 namespace rey_engine::render {

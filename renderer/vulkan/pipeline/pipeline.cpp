@@ -81,7 +81,9 @@ PipelineBuilder::PipelineBuilder() noexcept {
 
 std::expected<VkPipeline, EngineError> PipelineBuilder::build(
     VkDevice device,
-    VkRenderPass render_pass
+    std::span<const VkFormat> color_formats,
+    VkFormat depth_format,
+    VkFormat stencil_format
 ) const noexcept {
     if (pipeline_layout_ == VK_NULL_HANDLE) {
         return std::unexpected(EngineError{LegacyError{"Pipeline Layout が設定されていません"}});
@@ -101,8 +103,21 @@ std::expected<VkPipeline, EngineError> PipelineBuilder::build(
         .pDynamicStates = dynamic_states.data()
     };
 
+    // =================================================================
+    // 注目: Dynamic Rendering 用の構造体
+    // =================================================================
+    VkPipelineRenderingCreateInfo const rendering_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .pNext = nullptr,
+        .colorAttachmentCount = static_cast<uint32_t>(color_formats.size()),
+        .pColorAttachmentFormats = color_formats.data(),
+        .depthAttachmentFormat = depth_format,
+        .stencilAttachmentFormat = stencil_format
+    };
+
     VkGraphicsPipelineCreateInfo const pipeline_info{
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .pNext = &rendering_info,
         .stageCount = static_cast<uint32_t>(shader_stages_.size()),
         .pStages = shader_stages_.data(),
         .pVertexInputState = &vertex_input_info_,
@@ -114,23 +129,24 @@ std::expected<VkPipeline, EngineError> PipelineBuilder::build(
         .pColorBlendState = &color_blend_info,
         .pDynamicState = &dynamic_state_info,
         .layout = pipeline_layout_,
-        .renderPass = render_pass,
+        .renderPass = VK_NULL_HANDLE,
         .subpass = 0
     };
 
-    VkPipeline pipeline;
+    VkPipeline pipeline = nullptr;
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
-        return std::unexpected(LegacyError("GraphicsPipeline生成失敗"));
+        return std::unexpected(EngineError{LegacyError{"GraphicsPipeline生成失敗"}});
     }
 
     return pipeline;
 }
 
-std::expected<GraphicsPipeline, EngineError> GraphicsPipeline::create(
+    std::expected<GraphicsPipeline, EngineError> GraphicsPipeline::create(
     VkDevice device,
-    VkRenderPass render_pass,
+    VkFormat color_attachment_format,
+    VkFormat depth_attachment_format,
     VkExtent2D extent,
-    VkDescriptorSetLayout descriptor_set_layout,
+    std::span<const VkDescriptorSetLayout> descriptor_set_layouts,
     const VkVertexInputBindingDescription& binding_desc,
     std::span<const VkVertexInputAttributeDescription> attrib_desc
 ) noexcept {
@@ -196,34 +212,37 @@ std::expected<GraphicsPipeline, EngineError> GraphicsPipeline::create(
     std::array push_constant_ranges = { VkPushConstantRange{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
         .offset = 0,
-        .size = sizeof(PushConstants)
-    }};
+        .size = sizeof(PushConstants),
+    },};
 
-    std::array set_layouts = { descriptor_set_layout };
 
     VkPipelineLayoutCreateInfo const layout_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 1,
-        .pSetLayouts = set_layouts.data(),
-        .pushConstantRangeCount = 1,
+        .pNext = nullptr,
+        .flags = 0,
+        .setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size()),
+        .pSetLayouts = descriptor_set_layouts.data(),
+        .pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size()),
         .pPushConstantRanges = push_constant_ranges.data()
     };
 
-    VkPipelineLayout layout;
+    VkPipelineLayout layout = nullptr;
     if (vkCreatePipelineLayout(device, &layout_info, nullptr, &layout) != VK_SUCCESS) {
         vkDestroyShaderModule(device, vert_module.value(), nullptr);
         vkDestroyShaderModule(device, frag_module.value(), nullptr);
-        return std::unexpected(LegacyError("PipelineLayout生成失敗"));
+        return std::unexpected(EngineError{LegacyError{"PipelineLayout生成失敗"}});
     }
 
     // 5. Builderを使ってパイプラインを構築
     PipelineBuilder builder;
+    std::array color_formats = { color_attachment_format };
+
     auto pipeline_result = builder
         .with_shaders(std::move(shader_stages))
         .with_vertex_input(vertex_input)
         .with_viewport_state(viewport_state)
         .with_layout(layout)
-        .build(device, render_pass);
+        .build(device, color_formats, depth_attachment_format);
 
     vkDestroyShaderModule(device, vert_module.value(), nullptr);
     vkDestroyShaderModule(device, frag_module.value(), nullptr);

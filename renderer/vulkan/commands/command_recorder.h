@@ -6,7 +6,7 @@
 #include <optional>
 #include <string>
 #include <cstddef>
-#include "vulkan/pipeline/vulkan_context.h"
+#include "../core/vulkan_context.h"
 
 namespace rey_engine::render {
 

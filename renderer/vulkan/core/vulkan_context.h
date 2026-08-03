@@ -15,7 +15,6 @@ struct GpuBuffer {
     VkDeviceSize size{0};
     std::optional<VkIndexType> index_type{std::nullopt};
 
-    // VMAの解放にはAllocatorが必要なため、引数としてContextを受け取ります。
     void destroy(const struct VulkanContext& context) noexcept;
 };
 

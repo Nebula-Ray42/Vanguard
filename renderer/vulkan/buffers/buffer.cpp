@@ -1,6 +1,6 @@
 #include "engine_error.h"
 #include "vk_mem_alloc.h"
-#include "pipeline/vulkan_context.h"
+#include "../core/vulkan_context.h"
 
 namespace rey_engine::render {
     struct VulkanContext;

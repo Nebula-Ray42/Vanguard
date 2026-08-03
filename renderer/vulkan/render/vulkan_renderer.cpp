@@ -5,33 +5,45 @@
 #include <utility>
 
 #include "vulkan/buffers/buffer.h"
+#include "vulkan/descriptors/descriptor.h"
 
 namespace rey_engine::render {
 
-std::expected<void, EngineError> VulkanRenderer::initialize_descriptor_resources() {
-    auto layout = create_global_ubo_layout(context_.device);
-    if (!layout) {
-        return std::unexpected(layout.error());
-    }
-    descriptor_set_layout_ = *layout;
+    std::expected<void, EngineError> VulkanRenderer::initialize_descriptor_resources() {
+        // ==========================================
+        // 1. UBO (Set 0) の初期化
+        // ==========================================
+        auto ubo_layout_opt = create_global_ubo_layout(context_.device);
+        if (!ubo_layout_opt) return std::unexpected(ubo_layout_opt.error());
+        ubo_layout_ = *ubo_layout_opt;
 
-    auto pool = create_descriptor_pool(context_);
-    if (!pool) {
-        return std::unexpected(pool.error());
-    }
-    descriptor_pool_ = *pool;
+        auto ubo_pool_opt = create_descriptor_pool(context_);
+        if (!ubo_pool_opt) return std::unexpected(ubo_pool_opt.error());
+        ubo_pool_ = *ubo_pool_opt;
 
-    auto descriptor_set = create_descriptor_set(
-        context_,
-        descriptor_pool_,
-        descriptor_set_layout_,
-        global_ubo_buffer_.buffer);
-    if (!descriptor_set) {
-        return std::unexpected(descriptor_set.error());
+        auto ubo_set_opt = create_descriptor_set(
+            context_, ubo_pool_, ubo_layout_, global_ubo_buffer_.buffer);
+        if (!ubo_set_opt) return std::unexpected(ubo_set_opt.error());
+        global_ubo_set_ = *ubo_set_opt;
+
+        // ==========================================
+        // 2. Bindless (Set 1) の初期化
+        // ==========================================
+        auto bindless_layout_opt = BindlessDescriptorLayout::create(context_.device);
+        if (!bindless_layout_opt) return std::unexpected(bindless_layout_opt.error());
+        bindless_layout_ = *bindless_layout_opt;
+
+        auto bindless_pool_opt = BindlessDescriptorManager::create_pool(context_.device);
+        if (!bindless_pool_opt) return std::unexpected(bindless_pool_opt.error());
+        bindless_pool_ = *bindless_pool_opt;
+
+        auto bindless_set_opt = BindlessDescriptorManager::allocate_set(
+            context_.device, bindless_pool_, bindless_layout_);
+        if (!bindless_set_opt) return std::unexpected(bindless_set_opt.error());
+        global_bindless_set_ = *bindless_set_opt;
+
+        return {};
     }
-    global_descriptor_set_ = *descriptor_set;
-    return {};
-}
 
 std::expected<void, EngineError> VulkanRenderer::initialize_pipeline_resources() {
     constexpr VkVertexInputBindingDescription binding_description{
@@ -61,13 +73,20 @@ std::expected<void, EngineError> VulkanRenderer::initialize_pipeline_resources()
         },
     };
 
+        std::array<VkDescriptorSetLayout, 2> const layouts = {
+            ubo_layout_,       // Set 0
+            bindless_layout_   // Set 1
+        };
+
     auto pipeline = GraphicsPipeline::create(
-        context_.device,
-        swapchain_target_.render_pass,
-        swapchain_target_.extent,
-        descriptor_set_layout_,
-        binding_description,
-        attribute_descriptions);
+    context_.device,
+    swapchain_target_.format,
+    VK_FORMAT_UNDEFINED,
+    swapchain_target_.extent,
+    layouts,
+    binding_description,
+    attribute_descriptions);
+
     if (!pipeline) {
         return std::unexpected(pipeline.error());
     }
@@ -106,10 +125,20 @@ GlobalUbo VulkanRenderer::build_global_ubo(const RenderSnapshot& snapshot) {
         global_descriptor_set_ = other.global_descriptor_set_;
         pipeline_ = std::move(other.pipeline_);
 
+        ubo_layout_ = other.ubo_layout_;
+        ubo_pool_ = other.ubo_pool_;
+        global_ubo_set_ = other.global_ubo_set_;
+
+        bindless_layout_ = other.bindless_layout_;
+        bindless_pool_ = other.bindless_pool_;
+        global_bindless_set_ = other.global_bindless_set_;
+
         other.context_.device = VK_NULL_HANDLE;
 
-        other.descriptor_pool_ = VK_NULL_HANDLE;
-        other.descriptor_set_layout_ = VK_NULL_HANDLE;
+        other.ubo_layout_ = VK_NULL_HANDLE;
+        other.ubo_pool_ = VK_NULL_HANDLE;
+        other.bindless_layout_ = VK_NULL_HANDLE;
+        other.bindless_pool_ = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -133,17 +162,26 @@ VulkanRenderer::~VulkanRenderer() {
 
     global_ubo_buffer_.destroy(context_);
 
-    if (descriptor_pool_ != VK_NULL_HANDLE) {
-        vkDestroyDescriptorPool(context_.device, descriptor_pool_, nullptr);
-        descriptor_pool_ = VK_NULL_HANDLE;
-    }
-    if (descriptor_set_layout_ != VK_NULL_HANDLE) {
-        vkDestroyDescriptorSetLayout(context_.device, descriptor_set_layout_, nullptr);
-        descriptor_set_layout_ = VK_NULL_HANDLE;
-    }
+        if (ubo_pool_ != VK_NULL_HANDLE) {
+            vkDestroyDescriptorPool(context_.device, ubo_pool_, nullptr);
+            ubo_pool_ = VK_NULL_HANDLE;
+        }
+        if (ubo_layout_ != VK_NULL_HANDLE) {
+            vkDestroyDescriptorSetLayout(context_.device, ubo_layout_, nullptr);
+            ubo_layout_ = VK_NULL_HANDLE;
+        }
 
-    context_.destroy();
-    std::cout << "VulkanRenderer child objects destroyed cleanly.\n";
+        if (bindless_pool_ != VK_NULL_HANDLE) {
+            BindlessDescriptorManager::destroy_pool(context_.device, bindless_pool_);
+            bindless_pool_ = VK_NULL_HANDLE;
+        }
+        if (bindless_layout_ != VK_NULL_HANDLE) {
+            BindlessDescriptorLayout::destroy(context_.device, bindless_layout_);
+            bindless_layout_ = VK_NULL_HANDLE;
+        }
+
+        context_.destroy();
+        std::cout << "VulkanRenderer child objects destroyed cleanly.\n";
 }
 
 std::expected<VulkanRenderer, EngineError> VulkanRenderer::create(

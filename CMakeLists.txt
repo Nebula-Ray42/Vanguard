@@ -58,33 +58,37 @@ set(SOURCE_FILES
         renderer/vulkan/renderer_vulkan.cpp
         renderer/include/rey_renderer.h
         renderer/include/generated/render_command_generated.h
-        renderer/vulkan/render/command_recorder.h
+        renderer/vulkan/commands/command_recorder.h
         renderer/include/engine_error.h
-        renderer/vulkan/pipeline/sync_context.h
+        renderer/vulkan/core/sync_context.h
         renderer/vulkan/pipeline/pipeline.h
-        renderer/vulkan/pipeline/vulkan_context.h
+        renderer/vulkan/core/vulkan_context.h
         renderer/vulkan/render/swapchain_target.h
         renderer/vulkan/render/swapchain_target.cpp
         renderer/vulkan/buffers/buffer.h
         renderer/vulkan/buffers/buffer.cpp
         renderer/vulkan/pipeline/pipeline.cpp
-        renderer/vulkan/scene/camera.h
-        renderer/vulkan/scene/mesh.h
-        renderer/vulkan/scene/transform.h
+        renderer/scene/camera.h
+        renderer/scene/mesh.h
+        renderer/scene/transform.h
         renderer/include/render_types.h
         renderer/include/vk_mem_alloc.h
         renderer/include/vma_implementation.cpp
         renderer/vulkan/descriptors/descriptor.h
         renderer/vulkan/descriptors/descriptor.cpp
-        renderer/vulkan/buffers/command_utils.h
-        renderer/vulkan/buffers/command_utils.cpp
+        renderer/vulkan/commands/command_utils.h
+        renderer/vulkan/commands/command_utils.cpp
         renderer/vulkan/render/vulkan_renderer.h
         renderer/vulkan/render/vulkan_renderer.cpp
         renderer/include/glfw3.h
         renderer/include/glfw_includeI_vulkan.cpp
         "${SHADER_DIR}/main.slang"
         tests/test_main.cpp
-        renderer/vulkan/pipeline/vulkan_context.cpp
+        renderer/vulkan/core/vulkan_context.cpp
+        renderer/techniques/pbr/pbr_pipeline.h
+        renderer/techniques/pbr/pbr_pipeline.cpp
+        renderer/techniques/toon/toon_pipeline.h
+        renderer/techniques/toon/toon_pipeline.cpp
 )
 
 add_library(rey_renderer STATIC ${SOURCE_FILES})

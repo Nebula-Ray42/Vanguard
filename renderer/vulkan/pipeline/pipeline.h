@@ -54,10 +54,12 @@ public:
         return *this;
     }
 
-    // パイプライン生成 (実装は .cpp へ)
+    // パイプライン生成
     [[nodiscard]] std::expected<VkPipeline, EngineError> build(
         VkDevice device,
-        VkRenderPass render_pass
+        std::span<const VkFormat> color_formats,
+        VkFormat depth_format = VK_FORMAT_UNDEFINED,
+        VkFormat stencil_format = VK_FORMAT_UNDEFINED
     ) const noexcept;
 };
 
@@ -71,13 +73,14 @@ struct GraphicsPipeline {
 
     // 静的ファクトリ関数
     [[nodiscard]] static std::expected<GraphicsPipeline, EngineError> create(
-        VkDevice device,
-        VkRenderPass render_pass,
-        VkExtent2D extent,
-        VkDescriptorSetLayout descriptor_set_layout,
-        const VkVertexInputBindingDescription& binding_desc,
-        std::span<const VkVertexInputAttributeDescription> attrib_desc
-    ) noexcept;
+    VkDevice device,
+    VkFormat color_attachment_format,
+    VkFormat depth_attachment_format,
+    VkExtent2D extent,
+    std::span<const VkDescriptorSetLayout> descriptor_set_layouts,
+    const VkVertexInputBindingDescription& binding_desc,
+    std::span<const VkVertexInputAttributeDescription> attrib_desc
+) noexcept;
 
     // パイプラインとレイアウトを破棄
     void destroy(VkDevice device) const noexcept;
