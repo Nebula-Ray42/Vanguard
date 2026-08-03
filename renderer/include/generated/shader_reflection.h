@@ -11,10 +11,13 @@ namespace rey_engine::generated {
     constexpr uint32_t SET_globalData = 0;
     constexpr uint32_t BINDING_globalData = 0;
 
+    constexpr uint32_t SET_defaultSampler = 1;
+    constexpr uint32_t BINDING_defaultSampler = 1;
+
     constexpr uint32_t SET_push = 0;
     constexpr uint32_t BINDING_push = 0;
 
     // 実行時にVulkanのレイアウトを組むための静的配列など
-    constexpr uint32_t TOTAL_BINDINGS = 2;
+    constexpr uint32_t TOTAL_BINDINGS = 3;
 
 }  // namespace rey_engine::generated

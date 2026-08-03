@@ -94,16 +94,16 @@ namespace rey_engine::render {
     std::array bindings = {
         VkDescriptorSetLayoutBinding{
             .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             .descriptorCount = MAX_BINDLESS_RESOURCES,
             .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
             .pImmutableSamplers = nullptr
         },
         VkDescriptorSetLayoutBinding{
             .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = MAX_BINDLESS_RESOURCES,
-            .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
             .pImmutableSamplers = nullptr
         }
     };
@@ -111,56 +111,54 @@ namespace rey_engine::render {
     // 各BindingにBindless用のフラグを付与する
         std::array<VkDescriptorBindingFlags, 2> binding_flags = {
             VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
-            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
         };
 
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_info{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
-        .pNext = nullptr,
-        .bindingCount = static_cast<uint32_t>(binding_flags.size()),
-        .pBindingFlags = binding_flags.data(),
-    };
+        VkDescriptorSetLayoutBindingFlagsCreateInfo flags_info{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+            .pNext = nullptr,
+            .bindingCount = static_cast<uint32_t>(binding_flags.size()),
+            .pBindingFlags = binding_flags.data(),
+        };
 
-    // レイアウト全体の作成設定
-    VkDescriptorSetLayoutCreateInfo layout_info{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .pNext = &flags_info,
-        .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
-        .bindingCount = static_cast<uint32_t>(bindings.size()),
-        .pBindings = bindings.data()
-    };
+        VkDescriptorSetLayoutCreateInfo layout_info{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = &flags_info,
+            .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+            .bindingCount = static_cast<uint32_t>(bindings.size()),
+            .pBindings = bindings.data()
+        };
 
-    VkDescriptorSetLayout layout;
-    if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &layout) != VK_SUCCESS) {
-        return std::unexpected(EngineError{LegacyError{"Bindless DescriptorLayoutの作成に失敗しました"}});
+        VkDescriptorSetLayout layout;
+        if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &layout) != VK_SUCCESS) {
+            return std::unexpected(EngineError{LegacyError{"Bindless DescriptorLayoutの作成に失敗しました"}});
+        }
+
+        return layout;
     }
-
-    return layout;
-}
 
     std::expected<VkDescriptorPool, EngineError> BindlessDescriptorManager::create_pool(VkDevice device) noexcept {
     // Layoutで定義したのと同じ最大数を指定する
     constexpr uint32_t MAX_BINDLESS_RESOURCES = 100000;
 
-    std::array<VkDescriptorPoolSize, 2> pool_sizes = {
-        VkDescriptorPoolSize{
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = MAX_BINDLESS_RESOURCES,
-        },
-        VkDescriptorPoolSize{
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = MAX_BINDLESS_RESOURCES,
-        }
-    };
+        std::array pool_sizes = {
+            VkDescriptorPoolSize{
+                .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, // 画像用
+                .descriptorCount = MAX_BINDLESS_RESOURCES
+            },
+            VkDescriptorPoolSize{
+                .type = VK_DESCRIPTOR_TYPE_SAMPLER,       // サンプラー用 (これが欠けていました)
+                .descriptorCount = 1
+            }
+        };
 
-    VkDescriptorPoolCreateInfo const pool_info{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-        .maxSets = 1, // エンジン全体で1つの巨大なSetしか使わないので 1
-        .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
-        .pPoolSizes = pool_sizes.data()
-    };
+        VkDescriptorPoolCreateInfo const pool_info{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+            .maxSets = 1,
+            .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
+            .pPoolSizes = pool_sizes.data()
+        };
 
     VkDescriptorPool pool{};
     if (vkCreateDescriptorPool(device, &pool_info, nullptr, &pool) != VK_SUCCESS) {

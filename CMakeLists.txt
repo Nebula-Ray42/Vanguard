@@ -44,7 +44,10 @@ add_custom_command(
         COMMAND ${SLANGC_EXECUTABLE} "${SHADER_DIR}/main.slang" -target spirv -profile glsl_460 -entry fragmentMain -stage fragment -o ${SPV_FRAG}
         COMMAND rey_slang_generator "${SHADER_DIR}/main.slang" "${CPP_REFLECTION_HEADER}"
         DEPENDS rey_slang_generator ${SLANG_SOURCES}
-        COMMENT "Compiling Slang shaders and generating C++ reflection headers..."
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/assets"                     # コピー元 (プロジェクト直下のassets)
+        "$<TARGET_FILE_DIR:rey_engine_tests>/assets"     # コピー先 (実行ファイルと同じ階層のassets)
+        COMMENT "Copying assets directory to test output directory..."
 )
 
 add_custom_target(generate_shaders ALL
@@ -79,7 +82,6 @@ set(SOURCE_FILES
         renderer/vulkan/commands/command_utils.h
         renderer/vulkan/commands/command_utils.cpp
         renderer/vulkan/render/vulkan_renderer.h
-        renderer/vulkan/render/vulkan_renderer.cpp
         renderer/include/glfw3.h
         renderer/include/glfw_includeI_vulkan.cpp
         "${SHADER_DIR}/main.slang"
@@ -89,6 +91,15 @@ set(SOURCE_FILES
         renderer/techniques/pbr/pbr_pipeline.cpp
         renderer/techniques/toon/toon_pipeline.h
         renderer/techniques/toon/toon_pipeline.cpp
+        renderer/scene/mesh.cpp
+        renderer/assets/image_loader.h
+        renderer/assets/image_loader.cpp
+        renderer/vulkan/images/texture.h
+        renderer/vulkan/images/texture.cpp
+        renderer/include/stb_image.h
+        renderer/vulkan/render/vulkan_renderer_core.cpp
+        renderer/vulkan/render/vulkan_renderer_init.cpp
+        renderer/vulkan/render/vulkan_renderer_draw.cpp
 )
 
 add_library(rey_renderer STATIC ${SOURCE_FILES})

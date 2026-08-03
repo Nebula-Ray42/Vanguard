@@ -14,7 +14,7 @@ namespace rey_engine::render {
     VulkanContext ctx{};
 
     // ============================================================================
-    // 1. Instance の作成 (指示付き初期化でモダン化)
+    // 1. Instance の作成
     // ============================================================================
     VkApplicationInfo const app_info{
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -42,7 +42,8 @@ namespace rey_engine::render {
         .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
         .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
         .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
-        .descriptorBindingPartiallyBound = VK_TRUE
+        .descriptorBindingPartiallyBound = VK_TRUE,
+        .runtimeDescriptorArray = VK_TRUE
     };
 
     VkPhysicalDeviceVulkan13Features vk13_features{

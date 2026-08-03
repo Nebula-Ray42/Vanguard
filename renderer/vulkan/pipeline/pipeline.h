@@ -9,10 +9,6 @@
 
 namespace rey_engine::render {
 
-// =====================================================================
-// Layer 3: Pipeline Structures
-// =====================================================================
-
 struct PushConstants {
     float model[16];
 };
@@ -33,7 +29,6 @@ private:
 public:
     PipelineBuilder() noexcept;
 
-    // メソッドチェーンのための参照返し (インライン実装)
     PipelineBuilder& with_shaders(std::vector<VkPipelineShaderStageCreateInfo> stages) noexcept {
         shader_stages_ = std::move(stages);
         return *this;
@@ -62,10 +57,6 @@ public:
         VkFormat stencil_format = VK_FORMAT_UNDEFINED
     ) const noexcept;
 };
-
-// =====================================================================
-// メインのパイプライン構造体
-// =====================================================================
 
 struct GraphicsPipeline {
     VkPipelineLayout layout{VK_NULL_HANDLE};

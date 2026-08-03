@@ -6,12 +6,13 @@
 
 #include "engine_error.h"
 #include "include/render_types.h"
-#include "../core/vulkan_context.h"
-#include "../core/sync_context.h"
+#include "core/vulkan_context.h"
+#include "core/sync_context.h"
 #include "vulkan/pipeline/pipeline.h"
 #include "vulkan/render/swapchain_target.h"
-#include "../commands/command_recorder.h"
+#include "commands/command_recorder.h"
 #include "vulkan/descriptors/descriptor.h"
+#include "images/texture.h"
 
 namespace rey_engine::render {
 
@@ -79,6 +80,9 @@ namespace rey_engine::render {
         VkDescriptorSetLayout bindless_layout_ = VK_NULL_HANDLE;
         VkDescriptorPool bindless_pool_ = VK_NULL_HANDLE;
         VkDescriptorSet global_bindless_set_ = VK_NULL_HANDLE;
+
+        std::expected<void, EngineError> initialize_textures();
+        std::vector<rey::vulkan::Texture> textures_;
     };
 
 } // namespace rey_engine::render

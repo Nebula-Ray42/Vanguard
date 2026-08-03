@@ -13,6 +13,8 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 color;
     glm::vec3 normal;
+    glm::vec2 uv;
+    uint32_t texture_id = 0;
 
     static vk::VertexInputBindingDescription get_binding_description() {
         return vk::VertexInputBindingDescription()
@@ -21,11 +23,13 @@ struct Vertex {
             .setInputRate(vk::VertexInputRate::eVertex);
     }
 
-    static std::array<vk::VertexInputAttributeDescription, 3> get_attribute_descriptions() {
+    static std::array<vk::VertexInputAttributeDescription, 5> get_attribute_descriptions() {
         return {
             vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, position)),
             vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),
-            vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal))
+            vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal)),
+            vk::VertexInputAttributeDescription(3, 0, vk::Format::eR32G32Sfloat,     offsetof(Vertex, uv)),
+            vk::VertexInputAttributeDescription(4, 0, vk::Format::eR32Uint,          offsetof(Vertex, texture_id))
         };
     }
 };
