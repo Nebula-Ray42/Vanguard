@@ -124,8 +124,7 @@ namespace rey_engine::render {
     // レイアウト全体の作成設定
     VkDescriptorSetLayoutCreateInfo layout_info{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .pNext = &flags_info, // ★ フラグ情報を連結
-        // ★ Bindless用のプールから割り当てるためのフラグ
+        .pNext = &flags_info,
         .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
         .bindingCount = static_cast<uint32_t>(bindings.size()),
         .pBindings = bindings.data()

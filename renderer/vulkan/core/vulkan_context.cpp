@@ -152,7 +152,7 @@ namespace rey_engine::render {
 
     VkDeviceCreateInfo const device_create_info{
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext = &vk13_features, // ★ pNext に繋いでデバイスに伝達
+        .pNext = &vk13_features,
         .flags = 0,
         .queueCreateInfoCount = 1,
         .pQueueCreateInfos = &queue_create_info,

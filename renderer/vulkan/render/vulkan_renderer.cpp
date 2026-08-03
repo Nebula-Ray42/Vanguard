@@ -10,9 +10,7 @@
 namespace rey_engine::render {
 
     std::expected<void, EngineError> VulkanRenderer::initialize_descriptor_resources() {
-        // ==========================================
-        // 1. UBO (Set 0) の初期化
-        // ==========================================
+
         auto ubo_layout_opt = create_global_ubo_layout(context_.device);
         if (!ubo_layout_opt) return std::unexpected(ubo_layout_opt.error());
         ubo_layout_ = *ubo_layout_opt;
@@ -26,9 +24,6 @@ namespace rey_engine::render {
         if (!ubo_set_opt) return std::unexpected(ubo_set_opt.error());
         global_ubo_set_ = *ubo_set_opt;
 
-        // ==========================================
-        // 2. Bindless (Set 1) の初期化
-        // ==========================================
         auto bindless_layout_opt = BindlessDescriptorLayout::create(context_.device);
         if (!bindless_layout_opt) return std::unexpected(bindless_layout_opt.error());
         bindless_layout_ = *bindless_layout_opt;
