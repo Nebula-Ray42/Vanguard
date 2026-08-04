@@ -14,6 +14,8 @@ find_package(Vulkan REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(flatbuffers CONFIG REQUIRED)
+find_package(fastgltf CONFIG REQUIRED)
+
 
 # 自作ツールとSlangは維持
 add_subdirectory(tools/slang_generator)
@@ -100,6 +102,10 @@ set(SOURCE_FILES
         renderer/vulkan/render/vulkan_renderer_core.cpp
         renderer/vulkan/render/vulkan_renderer_init.cpp
         renderer/vulkan/render/vulkan_renderer_draw.cpp
+        renderer/scene/gltf_loader.cpp
+        renderer/scene/gltf_loader.hpp
+        renderer/vulkan/buffers/vulkan_buffer_utils.h
+        renderer/vulkan/buffers/vulkan_buffer_utils.cpp
 )
 
 add_library(rey_renderer STATIC ${SOURCE_FILES})
@@ -122,6 +128,7 @@ target_link_libraries(rey_renderer PUBLIC
         glfw
         glm::glm
         flatbuffers::flatbuffers
+        fastgltf::fastgltf
 )
 
 # ==========================================

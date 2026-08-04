@@ -232,8 +232,7 @@ std::expected<VkPipeline, EngineError> PipelineBuilder::build(
         vkDestroyShaderModule(device, frag_module.value(), nullptr);
         return std::unexpected(EngineError{LegacyError{"PipelineLayout生成失敗"}});
     }
-
-    // 5. Builderを使ってパイプラインを構築
+    
     PipelineBuilder builder;
     std::array color_formats = { color_attachment_format };
 

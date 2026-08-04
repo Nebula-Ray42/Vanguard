@@ -86,9 +86,10 @@ VertexOutput vertexMain(VertexInput input) {
 
     return output;
 }
-
+/*
 [shader("fragment")]
 float4 fragmentMain(VertexOutput input) : SV_Target {
+
     // 1. ライティング計算
     float3 N = normalize(input.normalDir);
     float3 lightDir = normalize(float3(1.0, 1.0, 1.0));
@@ -104,3 +105,11 @@ float4 fragmentMain(VertexOutput input) : SV_Target {
 
     return float4(finalColor, 1.0);
 }
+*/
+
+[shader("fragment")]
+float4 fragmentMain(VertexOutput input) : SV_Target {
+
+    return float4(input.uv.x, input.uv.y, 0.0, 1.0);
+}
+

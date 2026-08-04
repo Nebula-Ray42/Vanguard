@@ -5,6 +5,7 @@
 #include <expected>
 
 #include "engine_error.h"
+#include "buffers/vulkan_buffer_utils.h"
 #include "include/render_types.h"
 #include "core/vulkan_context.h"
 #include "core/sync_context.h"
@@ -37,6 +38,7 @@ namespace rey_engine::render {
             uint32_t window_width,
             uint32_t window_height);
 
+
         ~VulkanRenderer();
 
         VulkanRenderer(VulkanRenderer&& other) noexcept;
@@ -47,6 +49,7 @@ namespace rey_engine::render {
         // メインAPI
         [[nodiscard]] std::expected<MeshId, EngineError> create_mesh_from_data(const MeshData& data);
         [[nodiscard]] std::expected<void, EngineError> draw_frame(const RenderSnapshot& snapshot);
+        std::expected<void, std::string> load_scene(const std::string& filepath);
 
     private:
         VulkanRenderer() = default;
@@ -83,6 +86,10 @@ namespace rey_engine::render {
 
         std::expected<void, EngineError> initialize_textures();
         std::vector<rey::vulkan::Texture> textures_;
+
+        AllocatedBuffer vertex_buffer_;
+        AllocatedBuffer index_buffer_;
+        uint32_t index_count_ = 0;
     };
 
 } // namespace rey_engine::render
