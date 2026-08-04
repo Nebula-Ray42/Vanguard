@@ -6,10 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# ==========================================
-# 1. 外部ライブラリとツールの読み込み (vcpkg経由)
-# ==========================================
-# vcpkgが提供するCONFIGモードで各パッケージを検索
 find_package(Vulkan REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -17,13 +13,9 @@ find_package(flatbuffers CONFIG REQUIRED)
 find_package(fastgltf CONFIG REQUIRED)
 
 
-# 自作ツールとSlangは維持
 add_subdirectory(tools/slang_generator)
 find_program(SLANGC_EXECUTABLE slangc REQUIRED)
 
-# ==========================================
-# 2. パスと変数の設定
-# ==========================================
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders")
 set(GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/renderer/include/generated")
 
@@ -37,9 +29,7 @@ set(SPV_VERT "${SHADER_DIR}/main_vert.spv")
 set(SPV_FRAG "${SHADER_DIR}/main_frag.spv")
 set(CPP_REFLECTION_HEADER "${GENERATED_INCLUDE_DIR}/shader_reflection.h")
 
-# ==========================================
-# 3. 統合パイプライン (SPIR-Vコンパイル & C++ヘッダー生成)
-# ==========================================
+
 add_custom_command(
         OUTPUT ${SPV_VERT} ${SPV_FRAG} ${CPP_REFLECTION_HEADER}
         COMMAND ${SLANGC_EXECUTABLE} "${SHADER_DIR}/main.slang" -target spirv -profile glsl_460 -entry vertexMain -stage vertex -o ${SPV_VERT}
@@ -47,8 +37,8 @@ add_custom_command(
         COMMAND rey_slang_generator "${SHADER_DIR}/main.slang" "${CPP_REFLECTION_HEADER}"
         DEPENDS rey_slang_generator ${SLANG_SOURCES}
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets"                     # コピー元 (プロジェクト直下のassets)
-        "$<TARGET_FILE_DIR:rey_engine_tests>/assets"     # コピー先 (実行ファイルと同じ階層のassets)
+        "${CMAKE_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:rey_engine_tests>/assets"
         COMMENT "Copying assets directory to test output directory..."
 )
 
@@ -56,9 +46,6 @@ add_custom_target(generate_shaders ALL
         DEPENDS ${SPV_VERT} ${SPV_FRAG} ${CPP_REFLECTION_HEADER}
 )
 
-# ==========================================
-# 4. レンダラー本体の定義
-# ==========================================
 set(SOURCE_FILES
         renderer/vulkan/renderer_vulkan.cpp
         renderer/include/rey_renderer.h
@@ -111,9 +98,6 @@ set(SOURCE_FILES
 add_library(rey_renderer STATIC ${SOURCE_FILES})
 add_dependencies(rey_renderer generate_shaders)
 
-# ==========================================
-# 5. インクルードパスとリンクの設定
-# ==========================================
 target_include_directories(rey_renderer PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/renderer"
         "${CMAKE_CURRENT_SOURCE_DIR}/renderer/include"
@@ -122,7 +106,6 @@ target_include_directories(rey_renderer PUBLIC
 
 target_include_directories(rey_renderer PRIVATE ${GENERATED_INCLUDE_DIR})
 
-# vcpkgが提供するターゲット名を指定
 target_link_libraries(rey_renderer PUBLIC
         Vulkan::Vulkan
         glfw
@@ -131,9 +114,6 @@ target_link_libraries(rey_renderer PUBLIC
         fastgltf::fastgltf
 )
 
-# ==========================================
-# 6. コンパイルオプションとPCH
-# ==========================================
 target_precompile_headers(rey_renderer PRIVATE
         <vulkan/vulkan.h>
         <expected>
