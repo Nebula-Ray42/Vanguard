@@ -1,0 +1,22 @@
+#pragma once
+
+#include <vulkan/vulkan.h>
+#include "vk_mem_alloc.h"
+#include <expected>
+#include <string>
+
+// バッファとそのメモリ割り当て情報をセットで管理する構造体
+struct AllocatedBuffer {
+    VkBuffer buffer{VK_NULL_HANDLE};
+    VmaAllocation allocation{nullptr};
+};
+
+std::expected<AllocatedBuffer, std::string> upload_buffer_to_gpu(
+    VmaAllocator allocator,
+    VkDevice device,
+    VkCommandPool command_pool,
+    VkQueue graphics_queue,
+    size_t buffer_size,
+    const void* data,
+    VkBufferUsageFlags target_usage
+);
