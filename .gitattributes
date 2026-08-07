@@ -1,0 +1,31 @@
+*.h linguist-language=C++
+*.hpp linguist-language=C++
+
+vcpkg_installed/** linguist-generated=true
+cmake-build-*/ linguist-generated=true
+third_party/** linguist-generated=true
+
+* text=auto
+
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.h text eol=lf
+*.c text eol=lf
+*.cc text eol=lf
+*.cxx text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.fbx binary
+*.gltf binary
+*.glb binary
+*.spv binary
