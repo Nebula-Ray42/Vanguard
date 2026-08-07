@@ -1,0 +1,12 @@
+{
+  "name": "rey-engine",
+  "version": "0.1.0",
+  "dependencies": [
+    "flatbuffers",
+    "glfw3",
+    "glm",
+    "imgui",
+    "vulkan",
+    "fastgltf"
+  ]
+}

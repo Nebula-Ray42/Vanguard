@@ -1,0 +1,18 @@
+// 名前空間の定義
+namespace rey_engine.render;
+
+// 固定長データ（メモリレイアウトが明確なもの）は struct で定義
+struct Color {
+  r: float;
+  g: float;
+  b: float;
+  a: float;
+}
+
+// 可変長や将来的にフィールドが増える可能性のあるデータは table で定義
+table RenderCommand {
+  clear_color: Color;
+}
+
+// このスキーマのルート（起点）となる型を指定
+root_type RenderCommand;
