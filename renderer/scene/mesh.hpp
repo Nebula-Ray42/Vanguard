@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render_types.h"
+#include "render_types.hpp"
 
 namespace vanguard::scene {
 

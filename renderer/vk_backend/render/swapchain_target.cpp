@@ -1,4 +1,4 @@
-#include "swapchain_target.h"
+#include "swapchain_target.hpp"
 
 #include <algorithm>
 #include <array>
@@ -6,7 +6,7 @@
 #include <ranges>
 #include <span>
 
-#include "engine_error.h"
+#include "engine_error.hpp"
 
 namespace vanguard::render {
 

@@ -1,7 +1,9 @@
 #pragma once
 #include <vulkan/vulkan.h>
+
 #include <expected>
-#include "../../assets/image_loader.h"
+
+#include "../../assets/image_loader.hpp"
 
 namespace rey::vulkan {
 

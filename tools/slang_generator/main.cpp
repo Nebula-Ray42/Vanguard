@@ -1,10 +1,11 @@
-#include <slang.h>
 #include <slang-com-ptr.h>
-#include <iostream>
+#include <slang.h>
+
 #include <fstream>
+#include <iostream>
 #include <string>
 
-#include "generator_core.h"
+#include "generator_core.hpp"
 
 int main(int argc, char** argv) {
 

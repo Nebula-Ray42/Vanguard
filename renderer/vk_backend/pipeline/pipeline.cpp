@@ -1,4 +1,4 @@
-#include "pipeline.h"
+#include "pipeline.hpp"
 #include <fstream>
 
 namespace vanguard::render {
@@ -232,7 +232,7 @@ std::expected<VkPipeline, EngineError> PipelineBuilder::build(
         vkDestroyShaderModule(device, frag_module.value(), nullptr);
         return std::unexpected(EngineError{LegacyError{"PipelineLayout生成失敗"}});
     }
-    
+
     PipelineBuilder builder;
     std::array color_formats = { color_attachment_format };
 

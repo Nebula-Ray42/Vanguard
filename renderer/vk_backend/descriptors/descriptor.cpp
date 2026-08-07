@@ -1,5 +1,6 @@
-#include "descriptor.h"
-#include "vk_backend/core/vulkan_context.h"
+#include "descriptor.hpp"
+
+#include "vk_backend/core/vulkan_context.hpp"
 
 namespace vanguard::render {
 

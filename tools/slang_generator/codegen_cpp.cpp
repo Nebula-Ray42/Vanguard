@@ -1,7 +1,8 @@
-#include "generator_core.h"
+#include <expected>
 #include <format>
 #include <string>
-#include <expected>
+
+#include "generator_core.hpp"
 
 namespace vanguard::slang_generator {
 

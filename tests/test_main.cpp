@@ -4,13 +4,12 @@
 #include <string>
 #include <variant>
 
-#include "engine_error.h"
+#include "engine_error.hpp"
 #include "include/glfw3.h"
-#include "include/render_types.h"
-#include "scene/camera.h"
-#include "scene/mesh.h"
-#include "vk_backend/render/vulkan_renderer.h"
-
+#include "include/render_types.hpp"
+#include "scene/camera.hpp"
+#include "scene/mesh.hpp"
+#include "vk_backend/render/vulkan_renderer.hpp"
 
 #include <glm/glm.hpp>
 

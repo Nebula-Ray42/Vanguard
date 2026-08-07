@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <expected>
-#include <span>
-#include <optional>
-#include <string>
+
 #include <cstddef>
-#include "../core/vulkan_context.h"
+#include <expected>
+#include <optional>
+#include <span>
+#include <string>
+
+#include "../core/vulkan_context.hpp"
 
 namespace vanguard::render {
 

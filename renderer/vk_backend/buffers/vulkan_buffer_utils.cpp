@@ -1,4 +1,4 @@
-#include "vulkan_buffer_utils.h"
+#include "vulkan_buffer_utils.hpp"
 #include <cstring>
 
 std::expected<AllocatedBuffer, std::string> upload_buffer_to_gpu(

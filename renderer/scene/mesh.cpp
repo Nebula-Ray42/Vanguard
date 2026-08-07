@@ -1,6 +1,6 @@
-#include "mesh.h"
+#include "mesh.hpp"
 
-#include "render_types.h"
+#include "render_types.hpp"
 
 namespace vanguard::scene {
     MeshData create_ground_grid(float size, float uv_scale, uint32_t tex_id) {

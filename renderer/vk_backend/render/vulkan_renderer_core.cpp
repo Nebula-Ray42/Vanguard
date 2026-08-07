@@ -1,10 +1,9 @@
-#include "vulkan_renderer.h"
-
 #include <iostream>
 #include <utility>
 
-#include "vk_backend/buffers/buffer.h"
 #include "scene/gltf_loader.hpp"
+#include "vk_backend/buffers/buffer.hpp"
+#include "vulkan_renderer.hpp"
 
 namespace vanguard::render {
 

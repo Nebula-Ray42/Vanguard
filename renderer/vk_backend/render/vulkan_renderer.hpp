@@ -5,15 +5,15 @@
 #include <expected>
 #include <vector>
 
-#include "engine_error.h"
-#include "include/render_types.h"
-#include "vk_backend/buffers/vulkan_buffer_utils.h"
-#include "vk_backend/commands/command_recorder.h"
-#include "vk_backend/core/sync_context.h"
-#include "vk_backend/descriptors/descriptor.h"
-#include "vk_backend/images/texture.h"
-#include "vk_backend/pipeline/pipeline.h"
-#include "vk_backend/render/swapchain_target.h"
+#include "engine_error.hpp"
+#include "include/render_types.hpp"
+#include "vk_backend/buffers/vulkan_buffer_utils.hpp"
+#include "vk_backend/commands/command_recorder.hpp"
+#include "vk_backend/core/sync_context.hpp"
+#include "vk_backend/descriptors/descriptor.hpp"
+#include "vk_backend/images/texture.hpp"
+#include "vk_backend/pipeline/pipeline.hpp"
+#include "vk_backend/render/swapchain_target.hpp"
 
 namespace vanguard::render {
 

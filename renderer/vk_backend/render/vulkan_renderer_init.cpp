@@ -1,13 +1,12 @@
-#include "vulkan_renderer.h"
-
 #include <array>
 #include <iostream>
 #include <utility>
 
-#include "vk_backend/buffers/buffer.h"
-#include "vk_backend/descriptors/descriptor.h"
-#include "vk_backend/images/texture.h"
-#include "assets/image_loader.h"
+#include "assets/image_loader.hpp"
+#include "vk_backend/buffers/buffer.hpp"
+#include "vk_backend/descriptors/descriptor.hpp"
+#include "vk_backend/images/texture.hpp"
+#include "vulkan_renderer.hpp"
 
 namespace vanguard::render {
 
