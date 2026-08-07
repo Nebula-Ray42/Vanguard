@@ -13,7 +13,7 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 25 &&
               FLATBUFFERS_VERSION_REVISION == 19,
              "Non-compatible flatbuffers version included");
 
-namespace rey_engine {
+namespace vanguard {
 namespace render {
 
 struct Color;
@@ -61,13 +61,13 @@ struct RenderCommand FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_CLEAR_COLOR = 4
   };
-  const rey_engine::render::Color *clear_color() const {
-    return GetStruct<const rey_engine::render::Color *>(VT_CLEAR_COLOR);
+  const vanguard::render::Color *clear_color() const {
+    return GetStruct<const vanguard::render::Color *>(VT_CLEAR_COLOR);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<rey_engine::render::Color>(verifier, VT_CLEAR_COLOR, 4) &&
+           VerifyField<vanguard::render::Color>(verifier, VT_CLEAR_COLOR, 4) &&
            verifier.EndTable();
   }
 };
@@ -76,7 +76,7 @@ struct RenderCommandBuilder {
   typedef RenderCommand Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_clear_color(const rey_engine::render::Color *clear_color) {
+  void add_clear_color(const vanguard::render::Color *clear_color) {
     fbb_.AddStruct(RenderCommand::VT_CLEAR_COLOR, clear_color);
   }
   explicit RenderCommandBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
@@ -92,41 +92,41 @@ struct RenderCommandBuilder {
 
 inline ::flatbuffers::Offset<RenderCommand> CreateRenderCommand(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const rey_engine::render::Color *clear_color = nullptr) {
+    const vanguard::render::Color *clear_color = nullptr) {
   RenderCommandBuilder builder_(_fbb);
   builder_.add_clear_color(clear_color);
   return builder_.Finish();
 }
 
-inline const rey_engine::render::RenderCommand *GetRenderCommand(const void *buf) {
-  return ::flatbuffers::GetRoot<rey_engine::render::RenderCommand>(buf);
+inline const vanguard::render::RenderCommand *GetRenderCommand(const void *buf) {
+  return ::flatbuffers::GetRoot<vanguard::render::RenderCommand>(buf);
 }
 
-inline const rey_engine::render::RenderCommand *GetSizePrefixedRenderCommand(const void *buf) {
-  return ::flatbuffers::GetSizePrefixedRoot<rey_engine::render::RenderCommand>(buf);
+inline const vanguard::render::RenderCommand *GetSizePrefixedRenderCommand(const void *buf) {
+  return ::flatbuffers::GetSizePrefixedRoot<vanguard::render::RenderCommand>(buf);
 }
 
 template <bool B = false>
 inline bool VerifyRenderCommandBuffer(
     ::flatbuffers::VerifierTemplate<B> &verifier) {
-  return verifier.template VerifyBuffer<rey_engine::render::RenderCommand>(nullptr);
+  return verifier.template VerifyBuffer<vanguard::render::RenderCommand>(nullptr);
 }
 
 template <bool B = false>
 inline bool VerifySizePrefixedRenderCommandBuffer(
     ::flatbuffers::VerifierTemplate<B> &verifier) {
-  return verifier.template VerifySizePrefixedBuffer<rey_engine::render::RenderCommand>(nullptr);
+  return verifier.template VerifySizePrefixedBuffer<vanguard::render::RenderCommand>(nullptr);
 }
 
 inline void FinishRenderCommandBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
-    ::flatbuffers::Offset<rey_engine::render::RenderCommand> root) {
+    ::flatbuffers::Offset<vanguard::render::RenderCommand> root) {
   fbb.Finish(root);
 }
 
 inline void FinishSizePrefixedRenderCommandBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
-    ::flatbuffers::Offset<rey_engine::render::RenderCommand> root) {
+    ::flatbuffers::Offset<vanguard::render::RenderCommand> root) {
   fbb.FinishSizePrefixed(root);
 }
 

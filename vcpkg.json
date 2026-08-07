@@ -1,12 +1,13 @@
 {
-  "name": "rey-engine",
+  "name": "vanguard",
   "version": "0.1.0",
   "dependencies": [
     "flatbuffers",
     "glfw3",
     "glm",
     "imgui",
-    "vulkan",
-    "fastgltf"
+    "fastgltf",
+    "gtest",
+    "shader-slang"
   ]
 }

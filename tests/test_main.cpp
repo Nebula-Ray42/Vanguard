@@ -4,20 +4,22 @@
 #include <string>
 #include <variant>
 
-#include <glm/glm.hpp>
-
 #include "engine_error.h"
-#include "glfw3.h"
-#include "render/vulkan_renderer.h"
+#include "include/glfw3.h"
+#include "include/render_types.h"
 #include "scene/camera.h"
 #include "scene/mesh.h"
+#include "vk_backend/render/vulkan_renderer.h"
+
+
+#include <glm/glm.hpp>
 
 namespace {
 
 constexpr uint32_t kWindowWidth = 800;
 constexpr uint32_t kWindowHeight = 600;
 
-std::string describe_error(const rey_engine::render::EngineError& error) {
+std::string describe_error(const vanguard::render::EngineError& error) {
     return std::visit([]<typename T0>(const T0& err) -> std::string {
         using T = std::decay_t<T0>;
         if constexpr (requires { err.message; }) {
@@ -49,7 +51,7 @@ int main() {
     std::cout << "ウィンドウを作成しました。VulkanRenderer を初期化します...\n";
 
     try {
-        auto renderer_expected = rey_engine::render::VulkanRenderer::create(
+        auto renderer_expected = vanguard::render::VulkanRenderer::create(
             "Rey Engine Test",
             window,
             kWindowWidth,
@@ -65,7 +67,7 @@ int main() {
         // ==========================================
         // 1. データの準備 (床の作成とGPU登録)
         // ==========================================
-        auto floor_data = rey_engine::scene::create_ground_grid(10.0f, 1.0f, 0);
+        auto floor_data = vanguard::scene::create_ground_grid(10.0f, 1.0f, 0);
         auto mesh_opt = renderer.create_mesh_from_data(floor_data);
         if (!mesh_opt) {
             std::cerr << "メッシュのGPU登録に失敗しました\n";
@@ -76,7 +78,7 @@ int main() {
         // ==========================================
         // 2. カメラの初期設定
         // ==========================================
-        rey_engine::scene::CameraData camera{};
+        vanguard::scene::CameraData camera{};
 
         // ==========================================
         // 3. メインループ
@@ -89,8 +91,8 @@ int main() {
            RenderSnapshot snapshot{};
             snapshot.frame_number = frame_count++;
 
-            snapshot.view_matrix = rey_engine::scene::compute_projection_matrix(camera) *
-                                   rey_engine::scene::compute_view_matrix(camera);
+            snapshot.view_matrix = vanguard::scene::compute_projection_matrix(camera) *
+                                   vanguard::scene::compute_view_matrix(camera);
 
             // 床のインスタンス情報を追加
             RenderInstance floor_instance{};

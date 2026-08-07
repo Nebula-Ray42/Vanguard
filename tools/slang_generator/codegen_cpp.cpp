@@ -3,7 +3,7 @@
 #include <string>
 #include <expected>
 
-namespace rey_engine::slang_generator {
+namespace vanguard::slang_generator {
 
     std::expected<std::string, std::string> generate_cpp_bindings(const ResourceBindingsSoA& soa_data) {
         if (soa_data.names.empty()) {

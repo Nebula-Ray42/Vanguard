@@ -4,7 +4,7 @@
 #include <fastgltf/tools.hpp>
 #include <fastgltf/glm_element_traits.hpp>
 
-namespace rey_engine::scene {
+namespace vanguard::scene {
 
 // MimeType(enum)を文字列に安全に変換するヘルパー
 constexpr const char* get_mime_type_string(fastgltf::MimeType mime) {

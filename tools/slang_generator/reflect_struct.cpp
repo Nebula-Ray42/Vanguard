@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 
-namespace rey_engine::slang_generator {
+namespace vanguard::slang_generator {
 
     // TODO 将来的には std::string ではなく EngineError 構造体への移行
     using ExtractResult = std::expected<ShaderStruct, std::string>;

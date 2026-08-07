@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace rey_engine::scene {
+namespace vanguard::scene {
 
     // 1. カメラのデータ（状態）
     struct CameraData {

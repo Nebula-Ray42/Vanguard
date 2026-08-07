@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <glm/glm.hpp>
 
-namespace rey_engine::scene {
+namespace vanguard::scene {
 
     enum class GltfLoadError {
         FileNotFound,

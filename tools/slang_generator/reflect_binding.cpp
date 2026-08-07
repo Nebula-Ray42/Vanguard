@@ -3,7 +3,7 @@
 #include <expected>
 #include <string>
 
-namespace rey_engine::slang_generator {
+namespace vanguard::slang_generator {
 
     std::expected<ResourceBindingsSoA, std::string> extract_resource_bindings(slang::ShaderReflection* reflection) {
         if (reflection == nullptr) {

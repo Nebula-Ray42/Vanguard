@@ -1,15 +1,12 @@
 #pragma once
 
+#include <expected>
 #include <string>
 #include <vector>
-#include <cstdint>
-#include <expected>
 
-namespace slang {
-    class ShaderReflection;
-}
+#include "slang.h"
 
-namespace rey_engine::slang_generator {
+namespace vanguard::slang_generator {
     struct ResourceBindingsSoA;
 
     // ==========================================

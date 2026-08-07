@@ -1,43 +1,43 @@
-add_executable(rey_engine_tests
+add_executable(vanguard_engine_tests
         test_main.cpp
 )
 
 list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
 
-target_include_directories(rey_engine_tests PRIVATE
+target_include_directories(vanguard_engine_tests PRIVATE
         ${CMAKE_SOURCE_DIR}/include
 )
 
 find_package(glfw3 REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
-target_link_libraries(rey_engine_tests PRIVATE
-        rey_renderer
+target_link_libraries(vanguard_engine_tests PRIVATE
         glfw
         Vulkan::Vulkan
         "-framework Cocoa"
         "-framework IOKit"
         "-framework CoreFoundation"
+        GTest::gtest
+        GTest::gtest_main
+        vanguard_renderer
 )
 
-target_include_directories(rey_engine_tests PRIVATE
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/src
+target_include_directories(vanguard_engine_tests PRIVATE
+        ${CMAKE_SOURCE_DIR}/renderer/include
+        ${CMAKE_SOURCE_DIR}/renderer
         /opt/homebrew/include
 )
 
-target_compile_options(rey_engine_tests PRIVATE
+target_compile_options(vanguard_engine_tests PRIVATE
         -Wno-nullability-extension
         -Wno-nullability-completeness
         -Wno-unused-parameter
 )
 
-target_link_libraries(rey_engine_tests PRIVATE rey_renderer)
-
-add_custom_command(TARGET rey_engine_tests POST_BUILD
+add_custom_command(TARGET vanguard_engine_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:rey_engine_tests>/assets"
+        "$<TARGET_FILE_DIR:vanguard_engine_tests>/assets"
 )
 
-# CTest にこのテストを登録
-add_test(NAME CoreLogicTest COMMAND rey_engine_tests)
+add_test(NAME CoreLogicTest COMMAND vanguard_engine_tests)
