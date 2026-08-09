@@ -1,22 +1,40 @@
-#!/bin/sh
+#!/bin/bash
 
-# 1. フォーマットチェック
-echo "Running cargo fmt..."
-cargo fmt --all -- --check
+set -e
+
+FILES=$(find . -type f \( -name '*.cpp' -o -name '*.hpp' \) \
+    -not -path "./cmake-build-*" \
+    -not -path "./vcpkg_installed/*" \
+    -not -path "./third_party/*" \
+    -not -path "./.git/*")
+
+if [ -z "$FILES" ]; then
+    echo "No C++ files found to check."
+    exit 0
+fi
+
+echo "Running clang-format..."
+
+clang-format --dry-run -Werror $FILES
 if [ $? -ne 0 ]; then
-    echo "警告: コードのフォーマットがされていません。"
-    echo "'cargo fmt' を実行してから再コミットしてください。"
+    echo "Error: Code formatting check failed."
+    echo "Please run 'clang-format -i <file>' to format your code before committing."
     exit 1
 fi
 
-# 2. 静的解析 (Clippy)
-echo "🦀 Running cargo clippy..."
-# -D warnings で、警告(Warning)が出た時点でもコミットを弾く厳しい設定
-cargo clippy --all-targets --all-features -- -D warnings
-if [ $? -ne 0 ]; then
-    echo "警告: Clippyが問題を検知しました。コードを修正してください。"
+echo "Running clang-tidy..."
+
+if [ ! -f "cmake-build-debug/compile_commands.json" ]; then
+    echo "Error: compile_commands.json not found."
+    echo "Please run the build script to generate it before checking."
     exit 1
 fi
 
-echo "すべてのチェックを通過しました！"
+clang-tidy -p cmake-build-debug --warnings-as-errors='*' $FILES
+if [ $? -ne 0 ]; then
+    echo "Error: clang-tidy detected issues. Please fix the code."
+    exit 1
+fi
+
+echo "All checks passed!"
 exit 0
