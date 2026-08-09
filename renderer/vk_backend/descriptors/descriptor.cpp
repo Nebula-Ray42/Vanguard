@@ -87,11 +87,9 @@ namespace vanguard::render {
     }
 
     std::expected<VkDescriptorSetLayout, EngineError> BindlessDescriptorLayout::create(VkDevice device) noexcept {
-    // 最新のGPUなら10万以上のリソースを登録可能。これがDODの基盤になる。
+        
     constexpr uint32_t MAX_BINDLESS_RESOURCES = 100000;
 
-    // Binding 0: テクスチャの巨大な配列
-    // Binding 1: ストレージバッファ(SSBO)の巨大な配列
     std::array bindings = {
         VkDescriptorSetLayoutBinding{
             .binding = 0,
