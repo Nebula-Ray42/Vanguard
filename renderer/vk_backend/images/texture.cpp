@@ -15,7 +15,7 @@ Texture::Texture(Texture&& other) noexcept
 
 Texture& Texture::operator=(Texture&& other) noexcept {
     if (this != &other) {
-        this->~Texture(); // 既存のリソースを破棄
+        this->~Texture();
         device = other.device;
         image = other.image;
         memory = other.memory;
@@ -40,11 +40,7 @@ Texture::~Texture() {
     }
 }
 
-// ---------------------------------------------------------------------------------
-// 以下、Vulkan特有のボイラープレート（学習目的ではブラックボックス化推奨）
-// ---------------------------------------------------------------------------------
 
-// メモリタイプを探すヘルパー
 uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
@@ -53,7 +49,7 @@ uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter
             return i;
         }
     }
-    return 0; // 実際はエラーハンドリングが必要ですが簡略化
+    return 0;
 }
 
 std::expected<Texture, VulkanError> create_texture_from_image(
@@ -66,7 +62,6 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     Texture tex;
     tex.device = device;
 
-    // 1. ステージングバッファの作成
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
 
@@ -93,7 +88,6 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     memcpy(data, image.data.get(), static_cast<size_t>(image_size));
     vkUnmapMemory(device, staging_buffer_memory);
 
-    // 3. VkImageの作成
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -102,7 +96,7 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     image_info.extent.depth = 1;
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
-    image_info.format = VK_FORMAT_R8G8B8A8_SRGB; // PolyhavenのDiffuse用
+    image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -116,7 +110,6 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     if (vkAllocateMemory(device, &alloc_info, nullptr, &tex.memory) != VK_SUCCESS) return std::unexpected(VulkanError::ALLOCATION_FAILED);
     vkBindImageMemory(device, tex.image, tex.memory, 0);
 
-    // 4. コマンドバッファによる転送とレイアウト変更（簡略化版）
     VkCommandBufferAllocateInfo cmd_alloc_info{};
     cmd_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cmd_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -177,11 +170,9 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     vkQueueWaitIdle(graphics_queue);
     vkFreeCommandBuffers(device, command_pool, 1, &cmd);
 
-    // 一時バッファのクリーンアップ
     vkDestroyBuffer(device, staging_buffer, nullptr);
     vkFreeMemory(device, staging_buffer_memory, nullptr);
 
-    // 5. ImageView と Sampler の作成
     VkImageViewCreateInfo view_info{};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = tex.image;
@@ -219,24 +210,21 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     uint32_t index,
     const Texture& texture)
 {
-    // 1. テクスチャ画像（配列の特定のインデックス）の情報
+
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView   = texture.get_view();
-    // ※ SAMPLED_IMAGE の場合、sampler は無視されるので不要
 
     VkWriteDescriptorSet image_write{};
     image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     image_write.dstSet          = set;
     image_write.dstBinding      = texture_binding; // 0
-    image_write.dstArrayElement = index;           // ここでバインドレス配列のインデックスを指定！
+    image_write.dstArrayElement = index;
     image_write.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     image_write.descriptorCount = 1;
     image_write.pImageInfo      = &image_info;
 
-    // 2. サンプラー（単体）の情報
-    // ※ 本来は1回だけ更新すれば良いですが、簡単のために一緒に更新します
-    uint32_t sampler_binding = 1; // HLSLの 1
+    uint32_t sampler_binding = 1;
 
     VkDescriptorImageInfo sampler_info{};
     sampler_info.sampler = texture.get_sampler();
@@ -244,8 +232,8 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     VkWriteDescriptorSet sampler_write{};
     sampler_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     sampler_write.dstSet          = set;
-    sampler_write.dstBinding      = sampler_binding; // 1
-    sampler_write.dstArrayElement = 0;               // サンプラーは配列ではないので 0
+    sampler_write.dstBinding      = sampler_binding; // 1 
+    sampler_write.dstArrayElement = 0;
     sampler_write.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
     sampler_write.descriptorCount = 1;
     sampler_write.pImageInfo      = &sampler_info;
