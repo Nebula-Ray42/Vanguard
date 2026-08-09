@@ -6,7 +6,6 @@
 
 namespace vanguard::scene {
 
-// MimeType(enum)を文字列に安全に変換するヘルパー
 constexpr const char* get_mime_type_string(fastgltf::MimeType mime) {
     switch (mime) {
         case fastgltf::MimeType::JPEG: return "image/jpeg";
