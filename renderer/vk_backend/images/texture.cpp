@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nebula-Ray42.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+
 #include "texture.hpp"
 #include <stdexcept>
 
@@ -232,7 +235,7 @@ std::expected<Texture, VulkanError> create_texture_from_image(
     VkWriteDescriptorSet sampler_write{};
     sampler_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     sampler_write.dstSet          = set;
-    sampler_write.dstBinding      = sampler_binding; // 1 
+    sampler_write.dstBinding      = sampler_binding; // 1
     sampler_write.dstArrayElement = 0;
     sampler_write.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
     sampler_write.descriptorCount = 1;
