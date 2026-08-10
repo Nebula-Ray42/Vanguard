@@ -22,15 +22,15 @@ add_library(vanguard_renderer STATIC
         scene/mesh.hpp
         scene/transform.hpp
         include/render_types.hpp
-        include/vk_mem_alloc.h
-        include/vma_implementation.cpp
+        include/ext/vk_mem_alloc.h
+        include/ext/vma_implementation.cpp
         vk_backend/descriptors/descriptor.hpp
         vk_backend/descriptors/descriptor.cpp
         vk_backend/commands/command_utils.hpp
         vk_backend/commands/command_utils.cpp
         vk_backend/render/vulkan_renderer.hpp
-        include/glfw3.h
-        include/glfw_includeI_vulkan.cpp
+        include/ext/glfw3.h
+        include/ext/glfw_includeI_vulkan.cpp
         "${SHADER_DIR}/main.slang"
         vk_backend/core/vulkan_context.cpp
         techniques/pbr/pbr_pipeline.hpp
@@ -42,7 +42,7 @@ add_library(vanguard_renderer STATIC
         assets/image_loader.cpp
         vk_backend/images/texture.hpp
         vk_backend/images/texture.cpp
-        include/stb_image.h
+        include/ext/stb_image.h
         vk_backend/render/vulkan_renderer_core.cpp
         vk_backend/render/vulkan_renderer_init.cpp
         vk_backend/render/vulkan_renderer_draw.cpp

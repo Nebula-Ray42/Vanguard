@@ -1,12 +1,14 @@
-// Copyright (c) 2026 Nebula-Ray42.
-// SPDX-License-Identifier: BSD-2-Clause-Patent
+//------------------------------------------------//
+// Copyright (c) 2026 Nebula-Ray42.               //
+// SPDX-License-Identifier: BSD-2-Clause-Patent   //
+//------------------------------------------------//
 
 #include "vulkan_context.hpp"
 #include <vector>
 #include <string_view>
 
 #define VMA_IMPLEMENTATION
-#include "glfw3.h"
+#include "../../include/ext/glfw3.h"
 
 namespace vanguard::render {
 

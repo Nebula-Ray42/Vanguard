@@ -1,5 +1,7 @@
-// Copyright (c) 2026 Nebula-Ray42.
-// SPDX-License-Identifier: BSD-2-Clause-Patent
+//------------------------------------------------//
+// Copyright (c) 2026 Nebula-Ray42.               //
+// SPDX-License-Identifier: BSD-2-Clause-Patent   //
+//------------------------------------------------//
 
 #pragma once
 
@@ -8,8 +10,9 @@
 #include <expected>
 #include <optional>
 
+#include "../../include/ext/vk_mem_alloc.h"
+
 #include "include/engine_error.hpp"
-#include "vk_mem_alloc.h"
 
 namespace vanguard::render {
 

@@ -1,5 +1,7 @@
-// Copyright (c) 2026 Nebula-Ray42.
-// SPDX-License-Identifier: BSD-2-Clause-Patent
+//------------------------------------------------//
+// Copyright (c) 2026 Nebula-Ray42.               //
+// SPDX-License-Identifier: BSD-2-Clause-Patent   //
+//------------------------------------------------//
 
 #define GLFW_INCLUDE_VULKAN
 #include <iostream>
@@ -7,8 +9,9 @@
 #include <string>
 #include <variant>
 
+#include "../renderer/include/ext/glfw3.h"
+
 #include "engine_error.hpp"
-#include "include/glfw3.h"
 #include "include/render_types.hpp"
 #include "scene/camera.hpp"
 #include "scene/mesh.hpp"

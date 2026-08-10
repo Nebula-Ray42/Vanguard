@@ -3,7 +3,7 @@
 
 #include "image_loader.hpp"
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../include/ext/stb_image.h"
 
 std::expected<RawImage, TextureError> load_image(const std::filesystem::path& filepath) {
     if (!std::filesystem::exists(filepath)) {
