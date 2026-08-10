@@ -70,5 +70,4 @@ Detailed architectural decisions, custom FlatBuffers schemas, struct memory padd
 
 Dual-licensed under either of:
 
-* Apache License, Version 2.0 ([LICENSE-APACHE](https://www.google.com/search?q=LICENSE-APACHE))
-* MIT license ([LICENSE-MIT](https://www.google.com/search?q=LICENSE-MIT))
+* BSD-2-Clause Plus Patent License ([LICENSE](https://www.google.com/search?q=LICENSE))
