@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nebula-Ray42.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+
 #include "rey_renderer.h"
 #include "generated/render_command_generated.h"
 
