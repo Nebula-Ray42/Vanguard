@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nebula-Ray42.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+
 #include "descriptor.hpp"
 
 #include "vk_backend/core/vulkan_context.hpp"
@@ -87,7 +90,7 @@ namespace vanguard::render {
     }
 
     std::expected<VkDescriptorSetLayout, EngineError> BindlessDescriptorLayout::create(VkDevice device) noexcept {
-        
+
     constexpr uint32_t MAX_BINDLESS_RESOURCES = 100000;
 
     std::array bindings = {
