@@ -70,4 +70,4 @@ Detailed architectural decisions, custom FlatBuffers schemas, struct memory padd
 
 Dual-licensed under either of:
 
-* BSD-2-Clause Plus Patent License ([LICENSE](https://www.google.com/search?q=LICENSE))
+* BSD-2-Clause Plus Patent License ([LICENSE](https://github.com/Nebula-Ray42/Vanguard/blob/main/LICENSE))
