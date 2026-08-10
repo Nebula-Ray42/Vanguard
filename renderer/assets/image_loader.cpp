@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nebula-Ray42.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+
 #include "image_loader.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
