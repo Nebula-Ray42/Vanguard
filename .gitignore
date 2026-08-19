@@ -35,7 +35,7 @@ vcpkg-packages/
 *.pdb
 *.exp
 
-# Python & Blender (ツール制作用)
+# Python & Blender
 __pycache__/
 *.py[cod]
 *$py.class
@@ -44,7 +44,7 @@ venv/
 *.blend1
 *.blend@
 
-# Generated Source Code (FlatBuffersなど自動生成ファイル)
+# Generated Source Code
 schemas/generated/
 schema/generated/
 
