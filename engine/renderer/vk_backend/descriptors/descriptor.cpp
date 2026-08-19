@@ -205,4 +205,4 @@ void BindlessDescriptorLayout::destroy(VkDevice device, VkDescriptorSetLayout la
     }
 }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

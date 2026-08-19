@@ -196,4 +196,4 @@ namespace vanguard::render {
     return ctx;
 }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

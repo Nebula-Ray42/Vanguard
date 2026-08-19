@@ -97,4 +97,4 @@ namespace vanguard::render {
         uint32_t index_count_ = 0;
     };
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

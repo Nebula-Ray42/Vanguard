@@ -432,4 +432,4 @@ void SwapchainTarget::destroy(const VkDevice device) const noexcept {
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

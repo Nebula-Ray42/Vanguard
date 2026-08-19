@@ -68,4 +68,4 @@ inline void GpuBuffer::destroy(const VulkanContext& context) noexcept {
     void* window_handle
 );
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

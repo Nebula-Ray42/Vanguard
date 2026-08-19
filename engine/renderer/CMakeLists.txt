@@ -54,8 +54,8 @@ add_library(vanguard_renderer STATIC
 
 # このライブラリを使う人がインクルードすべきディレクトリを指定
 target_include_directories(vanguard_renderer PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        .
+        include
 )
 
 add_dependencies(vanguard_renderer generate_shaders)

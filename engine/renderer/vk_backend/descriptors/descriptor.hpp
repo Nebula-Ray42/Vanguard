@@ -59,4 +59,4 @@ namespace vanguard::render {
             VkDescriptorSetLayout layout) noexcept;
     };
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

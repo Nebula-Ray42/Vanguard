@@ -47,4 +47,4 @@ namespace vanguard::render {
         uint32_t height
     );
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

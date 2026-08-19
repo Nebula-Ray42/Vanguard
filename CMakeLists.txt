@@ -14,10 +14,12 @@ find_package(fastgltf CONFIG REQUIRED)
 
 
 add_subdirectory(tools/slang_generator)
+add_subdirectory(schemas)
+
 find_program(SLANGC_EXECUTABLE slangc REQUIRED)
 
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders")
-set(GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/renderer/include/generated")
+set(GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/engine/renderer/include/generated")
 
 file(MAKE_DIRECTORY ${GENERATED_INCLUDE_DIR})
 
@@ -48,5 +50,5 @@ add_custom_target(generate_shaders ALL
 
 
 enable_testing()
-add_subdirectory(renderer)
+add_subdirectory(engine/renderer)
 add_subdirectory(tests)

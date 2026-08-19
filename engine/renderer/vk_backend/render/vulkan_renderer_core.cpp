@@ -180,4 +180,4 @@ std::expected<VulkanRenderer, EngineError> VulkanRenderer::create(
     return {};
 }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

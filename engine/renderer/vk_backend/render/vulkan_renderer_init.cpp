@@ -212,4 +212,4 @@ std::expected<MeshId, EngineError> VulkanRenderer::create_mesh_from_data(const M
     return mesh_id;
 }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

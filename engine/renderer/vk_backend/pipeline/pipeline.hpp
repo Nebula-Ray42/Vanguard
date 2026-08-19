@@ -83,4 +83,4 @@ struct GraphicsPipeline {
     void destroy(VkDevice device) const noexcept;
 };
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render
