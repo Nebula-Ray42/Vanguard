@@ -78,7 +78,12 @@ inline std::string to_string(const SwapchainError& error) {
     }, error);
 }
 
-struct LegacyError { std::string message; };
+struct LegacyError {
+    std::string message;
+
+    LegacyError(const char* msg) : message(msg) {}
+    LegacyError(std::string msg) : message(std::move(msg)) {}
+};
 
 using EngineError = std::variant<
     LegacyError,
@@ -98,4 +103,4 @@ inline std::string to_string(const EngineError& error) {
     }, error);
 }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render
