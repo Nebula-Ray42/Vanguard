@@ -20,7 +20,7 @@ jobs:
       - name: Setup Vulkan SDK 1.4
         uses: humbletim/setup-vulkan-sdk@v1.2.1
         with:
-          vulkan-query-version: 1.4.304.0
+          vulkan-query-version: 1.4.309.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader
 
       - name: Export GitHub Actions Cache API
