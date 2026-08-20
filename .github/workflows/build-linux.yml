@@ -23,7 +23,7 @@ jobs:
           sudo apt-get install -y ninja-build pkg-config libx11-dev libxi-dev libgl1-mesa-dev libudev-dev libwayland-dev libxkbcommon-dev
 
       - name: Setup Vulkan SDK 1.4
-        uses: humbletim/setup-vulkan-sdk@v1.1.1
+        uses: humbletim/setup-vulkan-sdk@v1.2.1
         with:
           vulkan-query-version: 1.4.304.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader
