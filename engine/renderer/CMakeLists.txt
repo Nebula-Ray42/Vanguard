@@ -52,7 +52,6 @@ add_library(vanguard_renderer STATIC
         vk_backend/buffers/vulkan_buffer_utils.cpp
 )
 
-# このライブラリを使う人がインクルードすべきディレクトリを指定
 target_include_directories(vanguard_renderer PUBLIC
         .
         include
@@ -60,7 +59,6 @@ target_include_directories(vanguard_renderer PUBLIC
 
 add_dependencies(vanguard_renderer generate_shaders)
 
-# Vulkanなどの依存ライブラリをリンク
 target_link_libraries(vanguard_renderer PRIVATE
         Vulkan::Vulkan
 )
