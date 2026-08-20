@@ -1,0 +1,41 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ "main", "refactor/*" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Vulkan SDK 1.4
+        uses: humbletim/setup-vulkan-sdk@v1.1.1
+        with:
+          vulkan-query-version: 1.4.304.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+
+      - name: Export GitHub Actions Cache API
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Configure CMake
+        run: |
+          cmake -B cmake-build-debug -G Ninja `
+            -DCMAKE_BUILD_TYPE=Debug `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      - name: Build
+        run: cmake --build cmake-build-debug
