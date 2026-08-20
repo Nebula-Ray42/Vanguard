@@ -31,11 +31,20 @@ namespace vanguard::render {
         .apiVersion = VK_API_VERSION_1_4
     };
 
-    std::vector<const char*> instance_extensions = {
-        VK_KHR_SURFACE_EXTENSION_NAME,
-        "VK_EXT_metal_surface", // Mac用
-        VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, // MoltenVK用
-    };
+    // GLFWが現在のOS(Win/Mac/Linux)で必要とするSurface拡張機能を自動で取得する
+    uint32_t glfw_ext_count = 0;
+    const char** glfw_exts = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
+    if (!glfw_exts) {
+        return std::unexpected(LegacyError("GLFW: 必要なVulkan拡張機能の取得に失敗しました"));
+    }
+    std::vector<const char*> instance_extensions(glfw_exts, glfw_exts + glfw_ext_count);
+
+    // Mac (MoltenVK) 特有の拡張機能を、Macビルド時のみ追加する
+    VkInstanceCreateFlags instance_flags = 0;
+#ifdef __APPLE__
+    instance_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    instance_flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
     std::vector<const char*> validation_layers = {
         "VK_LAYER_KHRONOS_validation",
@@ -61,7 +70,7 @@ namespace vanguard::render {
     VkInstanceCreateInfo const create_info{
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = nullptr,
-        .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+        .flags = instance_flags,
         .pApplicationInfo = &app_info,
         .enabledLayerCount = static_cast<uint32_t>(validation_layers.size()),
         .ppEnabledLayerNames = validation_layers.data(),
@@ -70,12 +79,12 @@ namespace vanguard::render {
     };
 
     if (vkCreateInstance(&create_info, nullptr, &ctx.instance) != VK_SUCCESS) {
-        return std::unexpected(EngineError{});
+        return std::unexpected(LegacyError("Vulkan: vkCreateInstance の呼び出しに失敗しました"));
     }
 
     if (glfwCreateWindowSurface(ctx.instance, static_cast<GLFWwindow*>(window_handle), nullptr, &ctx.surface) != VK_SUCCESS) {
         ctx.destroy();
-        return std::unexpected(EngineError{});
+        return std::unexpected(LegacyError("GLFW: Window Surface の生成に失敗しました"));
     }
 
     // ============================================================================
@@ -85,7 +94,7 @@ namespace vanguard::render {
     vkEnumeratePhysicalDevices(ctx.instance, &device_count, nullptr);
     if (device_count == 0) {
         ctx.destroy();
-        return std::unexpected(EngineError{});
+        return std::unexpected(LegacyError("Vulkan: Vulkan対応のGPUが見つかりません"));
     }
 
     std::vector<VkPhysicalDevice> physical_devices(device_count);
@@ -118,7 +127,7 @@ namespace vanguard::render {
 
     if (!device_found) {
         ctx.destroy();
-        return std::unexpected(EngineError{});
+        return std::unexpected(LegacyError("Vulkan: 描画と表示に対応したGPUキューが見つかりません"));
     }
 
     // ============================================================================
@@ -138,7 +147,6 @@ namespace vanguard::render {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
-    // 拡張機能の動的チェック (MoltenVK環境の補完)
     uint32_t extension_count = 0;
     vkEnumerateDeviceExtensionProperties(ctx.physical_device, nullptr, &extension_count, nullptr);
     std::vector<VkExtensionProperties> available_extensions(extension_count);
@@ -146,10 +154,10 @@ namespace vanguard::render {
 
     for (const auto& ext : available_extensions) {
         std::string_view const ext_name(ext.extensionName);
+        // MoltenVK 等のポータビリティサブセット環境への対応
         if (ext_name == "VK_KHR_portability_subset") {
             device_extensions.push_back("VK_KHR_portability_subset");
         }
-        // 古いMoltenVKバージョンへの安全網として、拡張機能版のDynamic Renderingも要求する
         if (ext_name == VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) {
             device_extensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         }
@@ -172,13 +180,13 @@ namespace vanguard::render {
 
     if (vkCreateDevice(ctx.physical_device, &device_create_info, nullptr, &ctx.device) != VK_SUCCESS) {
         ctx.destroy();
-        return std::unexpected(EngineError{});
+        return std::unexpected(LegacyError("Vulkan: 論理デバイス(VkDevice)の生成に失敗しました"));
     }
 
     vkGetDeviceQueue(ctx.device, ctx.graphics_queue_family_index, 0, &ctx.graphics_queue);
 
     // ============================================================================
-    // 4. VMA (Vulkan Memory Allocator) の初期化
+    // 4. VMAの初期化
     // ============================================================================
     VmaAllocatorCreateInfo const allocator_info{
         .flags = 0,
@@ -190,7 +198,7 @@ namespace vanguard::render {
 
     if (vmaCreateAllocator(&allocator_info, &ctx.allocator) != VK_SUCCESS) {
         ctx.destroy();
-        return std::unexpected(EngineError{});
+        return std::unexpected(LegacyError("VMA: アロケータの初期化に失敗しました"));
     }
 
     return ctx;
