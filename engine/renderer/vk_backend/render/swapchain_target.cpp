@@ -10,6 +10,7 @@
 #include <limits>
 #include <ranges>
 #include <span>
+#include <version>
 
 #include "engine_error.h"
 
@@ -26,10 +27,17 @@ namespace {
     }
 
     VkPresentModeKHR select_present_mode(std::span<const VkPresentModeKHR> modes) {
-        // std::ranges::contains は C++23 で追加された新しいrangeアルゴリズム
+#if defined(__cpp_lib_ranges_contains)
+        // C++23: std::ranges::contains が使える環境 (MSVC, 最新GCC等)
         return std::ranges::contains(modes, VK_PRESENT_MODE_MAILBOX_KHR)
             ? VK_PRESENT_MODE_MAILBOX_KHR
             : VK_PRESENT_MODE_FIFO_KHR;
+#else
+        // C++20: まだ未対応の環境 (Apple Clang等)
+        return std::ranges::find(modes, VK_PRESENT_MODE_MAILBOX_KHR) != modes.end()
+            ? VK_PRESENT_MODE_MAILBOX_KHR
+            : VK_PRESENT_MODE_FIFO_KHR;
+#endif
     }
 
     VkExtent2D compute_extent(const VkSurfaceCapabilitiesKHR& caps, uint32_t width, const uint32_t height) {
