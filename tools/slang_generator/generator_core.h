@@ -58,4 +58,4 @@ namespace vanguard::slang_generator {
         std::vector<uint32_t>    bindings;
     };
 
-} // namespace rey_engine::slang_generator
+}  // namespace vanguard::slang_generator

@@ -218,3 +218,4 @@ std::expected<void, EngineError> VulkanRenderer::end_frame(const ActiveFrame& ac
 }
 
 }  // namespace vanguard::render
+

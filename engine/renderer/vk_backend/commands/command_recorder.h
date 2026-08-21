@@ -97,4 +97,4 @@ public:
     }
 };
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

@@ -270,3 +270,4 @@ void GraphicsPipeline::destroy(VkDevice device) const noexcept {
 }
 
 }  // namespace vanguard::render
+

@@ -22,4 +22,4 @@ namespace vanguard::render {
         VkBuffer dst_buffer,
         VkDeviceSize size);
 
-} // namespace rey_engine::render
+} // namespace vanguard::render

@@ -60,8 +60,6 @@ struct RenderSnapshot {
     glm::mat4 view_matrix;
 };
 
-// --- GPU用データ構造 ---
-
 struct alignas(16) GpuTransform {
     glm::vec3 position;
     float _pad0;

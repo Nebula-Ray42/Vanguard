@@ -26,5 +26,6 @@ namespace vanguard::scene {
 
         return mesh;
     }
-}
+}  // namespace vanguard::scene
+
 

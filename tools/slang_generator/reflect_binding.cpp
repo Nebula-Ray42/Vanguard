@@ -59,4 +59,4 @@ namespace vanguard::slang_generator {
         return result_bindings;
     }
 
-}  // namespace rey_engine::slang_generator
+}  // namespace vanguard::slang_generator

@@ -69,3 +69,4 @@ inline void GpuBuffer::destroy(const VulkanContext& context) noexcept {
 );
 
 }  // namespace vanguard::render
+

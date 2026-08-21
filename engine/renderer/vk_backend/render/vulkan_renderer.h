@@ -98,3 +98,4 @@ namespace vanguard::render {
     };
 
 }  // namespace vanguard::render
+

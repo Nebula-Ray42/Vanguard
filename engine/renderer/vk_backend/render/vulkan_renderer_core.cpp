@@ -181,3 +181,4 @@ std::expected<VulkanRenderer, EngineError> VulkanRenderer::create(
 }
 
 }  // namespace vanguard::render
+

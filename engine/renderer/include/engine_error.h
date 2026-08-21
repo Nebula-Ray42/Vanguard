@@ -21,7 +21,7 @@ namespace swapchain_error {
     struct QueryCapabilities { VkResult result; };
     struct QueryFormats      { VkResult result; };
     struct QueryPresentModes { VkResult result; };
-    struct NoFormatsAvailable {}; // ペイロードなし
+    struct NoFormatsAvailable {};
     struct CreateSwapchain   { VkResult result; };
     struct GetImages         { VkResult result; };
 

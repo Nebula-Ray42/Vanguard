@@ -80,3 +80,4 @@ std::expected<AllocatedBuffer, std::string> upload_buffer_to_gpu(
 
     return target_buffer;
 }
+

@@ -64,3 +64,4 @@ namespace rey::vulkan {
         static void write_texture(VkDevice device, VkDescriptorSet set, uint32_t binding, uint32_t index, const Texture& texture);
     };
 } // namespace rey::vulkan
+

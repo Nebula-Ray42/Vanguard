@@ -433,3 +433,4 @@ void SwapchainTarget::destroy(const VkDevice device) const noexcept {
 }
 
 }  // namespace vanguard::render
+

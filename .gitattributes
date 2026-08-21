@@ -3,6 +3,7 @@
 *.hpp linguist-language=C++
 *.slang linguist-language=HLSL
 *.sh linguist-language=Shell
+*.py linguist-language=Python
 
 # --- Generated Files (Hide from GitHub language statistics) ---
 vcpkg_installed/** linguist-generated=true

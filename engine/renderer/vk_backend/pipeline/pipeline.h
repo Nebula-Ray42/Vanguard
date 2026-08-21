@@ -79,7 +79,6 @@ struct GraphicsPipeline {
     std::span<const VkVertexInputAttributeDescription> attrib_desc
 ) noexcept;
 
-    // パイプラインとレイアウトを破棄
     void destroy(VkDevice device) const noexcept;
 };
 

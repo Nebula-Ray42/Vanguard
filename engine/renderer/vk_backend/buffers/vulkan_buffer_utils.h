@@ -27,3 +27,4 @@ std::expected<AllocatedBuffer, std::string> upload_buffer_to_gpu(
     const void* data,
     VkBufferUsageFlags target_usage
 );
+

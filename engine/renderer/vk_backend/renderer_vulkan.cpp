@@ -28,3 +28,4 @@ void execute_render_command(const uint8_t* ptr, size_t len) {
                   << " )" << '\n';
     }
 }
+

@@ -43,4 +43,4 @@ namespace vanguard::slang_generator {
         return out;
     }
 
-}  // namespace rey_engine::slang_generator
+}  // namespace vanguard::slang_generator

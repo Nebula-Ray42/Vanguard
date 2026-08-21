@@ -206,3 +206,4 @@ void BindlessDescriptorLayout::destroy(VkDevice device, VkDescriptorSetLayout la
 }
 
 }  // namespace vanguard::render
+

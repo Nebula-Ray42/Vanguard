@@ -85,4 +85,4 @@ namespace vanguard::render {
         return {};
     }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

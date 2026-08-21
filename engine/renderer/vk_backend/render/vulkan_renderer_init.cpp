@@ -213,3 +213,4 @@ std::expected<MeshId, EngineError> VulkanRenderer::create_mesh_from_data(const M
 }
 
 }  // namespace vanguard::render
+
