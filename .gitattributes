@@ -1,6 +1,8 @@
 # --- Language Overrides ---
 *.h linguist-language=C
 *.hpp linguist-language=C++
+*.slang linguist-language=HLSL
+*.sh linguist-language=Shell
 
 # --- Generated Files (Hide from GitHub language statistics) ---
 vcpkg_installed/** linguist-generated=true
