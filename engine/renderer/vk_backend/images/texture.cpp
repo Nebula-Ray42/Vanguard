@@ -6,6 +6,7 @@
 #include "texture.h"
 
 #include <stdexcept>
+#include <cstring>
 
 namespace rey::vulkan {
 
