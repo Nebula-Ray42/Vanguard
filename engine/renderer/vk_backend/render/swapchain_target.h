@@ -11,9 +11,9 @@
 #include <ranges>
 #include <vector>
 
-#include "../core/vulkan_context.hpp"
+#include "../core/vulkan_context.h"
 
-#include "engine_error.hpp"
+#include "engine_error.h"
 
 namespace vanguard::render {
 

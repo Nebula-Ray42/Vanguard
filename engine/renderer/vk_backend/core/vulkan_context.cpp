@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "vulkan_context.hpp"
-#include <vector>
+#include "vulkan_context.h"
+
 #include <string_view>
+#include <vector>
 
 #define VMA_IMPLEMENTATION
 #include "../../include/ext/glfw3.h"

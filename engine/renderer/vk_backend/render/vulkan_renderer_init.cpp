@@ -8,10 +8,10 @@
 #include <utility>
 
 #include "assets/image_loader.hpp"
-#include "vk_backend/buffers/buffer.hpp"
-#include "vk_backend/descriptors/descriptor.hpp"
-#include "vk_backend/images/texture.hpp"
-#include "vulkan_renderer.hpp"
+#include "vk_backend/buffers/buffer.h"
+#include "vk_backend/descriptors/descriptor.h"
+#include "vk_backend/images/texture.h"
+#include "vulkan_renderer.h"
 
 namespace vanguard::render {
 

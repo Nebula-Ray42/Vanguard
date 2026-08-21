@@ -8,27 +8,27 @@ add_library(vanguard_renderer STATIC
         vk_backend/renderer_vulkan.cpp
         include/rey_renderer.h
         include/generated/render_command_generated.h
-        vk_backend/commands/command_recorder.hpp
-        include/engine_error.hpp
-        vk_backend/core/sync_context.hpp
-        vk_backend/pipeline/pipeline.hpp
-        vk_backend/core/vulkan_context.hpp
-        vk_backend/render/swapchain_target.hpp
+        vk_backend/commands/command_recorder.h
+        include/engine_error.h
+        vk_backend/core/sync_context.h
+        vk_backend/pipeline/pipeline.h
+        vk_backend/core/vulkan_context.h
+        vk_backend/render/swapchain_target.h
         vk_backend/render/swapchain_target.cpp
-        vk_backend/buffers/buffer.hpp
+        vk_backend/buffers/buffer.h
         vk_backend/buffers/buffer.cpp
         vk_backend/pipeline/pipeline.cpp
-        scene/camera.hpp
-        scene/mesh.hpp
-        scene/transform.hpp
-        include/render_types.hpp
+        scene/camera.h
+        scene/mesh.h
+        scene/transform.h
+        include/render_types.h
         include/ext/vk_mem_alloc.h
         include/ext/vma_implementation.cpp
-        vk_backend/descriptors/descriptor.hpp
+        vk_backend/descriptors/descriptor.h
         vk_backend/descriptors/descriptor.cpp
-        vk_backend/commands/command_utils.hpp
+        vk_backend/commands/command_utils.h
         vk_backend/commands/command_utils.cpp
-        vk_backend/render/vulkan_renderer.hpp
+        vk_backend/render/vulkan_renderer.h
         include/ext/glfw3.h
         include/ext/glfw_includeI_vulkan.cpp
         "${SHADER_DIR}/main.slang"
@@ -40,15 +40,15 @@ add_library(vanguard_renderer STATIC
         scene/mesh.cpp
         assets/image_loader.hpp
         assets/image_loader.cpp
-        vk_backend/images/texture.hpp
+        vk_backend/images/texture.h
         vk_backend/images/texture.cpp
         include/ext/stb_image.h
         vk_backend/render/vulkan_renderer_core.cpp
         vk_backend/render/vulkan_renderer_init.cpp
         vk_backend/render/vulkan_renderer_draw.cpp
         scene/gltf_loader.cpp
-        scene/gltf_loader.hpp
-        vk_backend/buffers/vulkan_buffer_utils.hpp
+        scene/gltf_loader.h
+        vk_backend/buffers/vulkan_buffer_utils.h
         vk_backend/buffers/vulkan_buffer_utils.cpp
 )
 

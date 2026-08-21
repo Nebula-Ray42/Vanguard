@@ -4,9 +4,9 @@
 //------------------------------------------------//
 
 #include "../../include/ext/vk_mem_alloc.h"
-#include "../core/vulkan_context.hpp"
+#include "../core/vulkan_context.h"
 
-#include "engine_error.hpp"
+#include "engine_error.h"
 
 namespace vanguard::render {
     struct VulkanContext;

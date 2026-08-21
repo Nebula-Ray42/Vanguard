@@ -12,9 +12,9 @@
 #include <type_traits>
 
 #include "../../include/ext/vk_mem_alloc.h"
-#include "../core/vulkan_context.hpp"
+#include "../core/vulkan_context.h"
 
-#include "include/engine_error.hpp"
+#include "include/engine_error.h"
 
 namespace vanguard::render {
     struct GpuBuffer;

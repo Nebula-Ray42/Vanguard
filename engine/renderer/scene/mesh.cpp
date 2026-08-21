@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "mesh.hpp"
+#include "mesh.h"
 
-#include "render_types.hpp"
+#include "render_types.h"
 
 namespace vanguard::scene {
     MeshData create_ground_grid(float size, float uv_scale, uint32_t tex_id) {

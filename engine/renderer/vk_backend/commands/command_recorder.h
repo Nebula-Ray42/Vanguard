@@ -13,7 +13,7 @@
 #include <span>
 #include <string>
 
-#include "../core/vulkan_context.hpp"
+#include "../core/vulkan_context.h"
 
 namespace vanguard::render {
 

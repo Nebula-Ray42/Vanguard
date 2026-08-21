@@ -10,7 +10,7 @@
 #include <iostream>
 #include <string>
 
-#include "generator_core.hpp"
+#include "generator_core.h"
 
 int main(int argc, char** argv) {
 

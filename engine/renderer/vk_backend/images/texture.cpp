@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "texture.hpp"
+#include "texture.h"
+
 #include <stdexcept>
 
 namespace rey::vulkan {

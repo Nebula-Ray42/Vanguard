@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "render_types.hpp"
+#include "render_types.h"
 
 namespace vanguard::scene {
 

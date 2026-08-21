@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-#include "generator_core.hpp"
+#include "generator_core.h"
 
 namespace vanguard::slang_generator {
 

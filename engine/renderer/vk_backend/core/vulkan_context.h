@@ -12,7 +12,7 @@
 
 #include "../../include/ext/vk_mem_alloc.h"
 
-#include "include/engine_error.hpp"
+#include "include/engine_error.h"
 
 namespace vanguard::render {
 

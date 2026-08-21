@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "command_utils.hpp"
+#include "command_utils.h"
 
 namespace vanguard::render {
 
@@ -69,4 +69,4 @@ namespace vanguard::render {
         return {};
     }
 
-} // namespace rey_engine::render
+}  // namespace vanguard::render

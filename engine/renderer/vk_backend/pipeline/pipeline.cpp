@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "pipeline.hpp"
+#include "pipeline.h"
+
 #include <fstream>
 
 namespace vanguard::render {

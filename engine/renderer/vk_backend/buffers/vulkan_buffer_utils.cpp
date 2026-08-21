@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "vulkan_buffer_utils.hpp"
+#include "vulkan_buffer_utils.h"
+
 #include <cstring>
 
 std::expected<AllocatedBuffer, std::string> upload_buffer_to_gpu(

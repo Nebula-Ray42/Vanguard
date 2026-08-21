@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "descriptor.hpp"
+#include "descriptor.h"
 
-#include "vk_backend/core/vulkan_context.hpp"
+#include "vk_backend/core/vulkan_context.h"
 
 namespace vanguard::render {
 

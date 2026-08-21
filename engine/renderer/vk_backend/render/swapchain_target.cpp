@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "swapchain_target.hpp"
+#include "swapchain_target.h"
 
 #include <algorithm>
 #include <array>
@@ -11,7 +11,7 @@
 #include <ranges>
 #include <span>
 
-#include "engine_error.hpp"
+#include "engine_error.h"
 
 namespace vanguard::render {
 
