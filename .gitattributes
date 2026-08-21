@@ -7,8 +7,8 @@
 # --- Generated Files (Hide from GitHub language statistics) ---
 vcpkg_installed/** linguist-generated=true
 cmake-build-*/ linguist-generated=true
-third_party/** linguist-generated=true
-schema/generated/** linguist-generated=true
+third_party/** linguist-vendored=true
+schemas/generated/** linguist-generated=true
 
 # --- Default Behavior ---
 * text=auto
