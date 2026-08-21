@@ -20,7 +20,7 @@ jobs:
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential ninja-build pkg-config autoconf automake libtool m4 xutils-dev libx11-dev libx11-xcb-dev libxi-dev libxext-dev libgl1-mesa-dev libudev-dev libwayland-dev libxkbcommon-dev
+          sudo apt-get install -y build-essential ninja-build pkg-config autoconf autoconf-archive automake libtool m4 xutils-dev libx11-dev libx11-xcb-dev libxi-dev libxext-dev libgl1-mesa-dev libudev-dev libwayland-dev libxkbcommon-dev
 
       - name: Setup Vulkan SDK 1.4
         uses: humbletim/setup-vulkan-sdk@v1.2.1
