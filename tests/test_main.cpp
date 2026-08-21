@@ -11,11 +11,11 @@
 
 #include "../renderer/include/ext/glfw3.h"
 
-#include "engine_error.hpp"
-#include "include/render_types.hpp"
-#include "scene/camera.hpp"
-#include "scene/mesh.hpp"
-#include "vk_backend/render/vulkan_renderer.hpp"
+#include "engine_error.h"
+#include "include/render_types.h"
+#include "scene/camera.h"
+#include "scene/mesh.h"
+#include "vk_backend/render/vulkan_renderer.h"
 
 #include <glm/glm.hpp>
 
@@ -46,7 +46,7 @@ int main() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    GLFWwindow* window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Rey Engine - Vulkan Test", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Vanguard - Vulkan Test", nullptr, nullptr);
     if (window == nullptr) {
         std::cerr << "ウィンドウの作成に失敗しました\n";
         glfwTerminate();
@@ -67,7 +67,7 @@ int main() {
         }
 
         auto renderer = std::move(renderer_expected.value());
-        std::cout << "VulkanRenderer の初期化に成功しました！\n";
+        std::cout << "VulkanRenderer の初期化に成功しました\n";
 
         // ==========================================
         // 1. データの準備 (床の作成とGPU登録)

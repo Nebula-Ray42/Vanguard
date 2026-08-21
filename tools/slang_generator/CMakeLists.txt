@@ -6,7 +6,7 @@ add_executable(rey_slang_generator
         reflect_struct.cpp
         reflect_binding.cpp
         codegen_cpp.cpp
-        generator_core.hpp
+        generator_core.h
 )
 
 target_compile_features(rey_slang_generator PRIVATE cxx_std_23)

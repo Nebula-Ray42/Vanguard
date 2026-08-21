@@ -7,6 +7,10 @@
 *.userosscache
 .sln.DotSettings.user
 
+# CMake & Clangd
+compile_commands.json
+.cache/
+
 # Build Directories
 cmake-build-*/
 build/
@@ -17,6 +21,7 @@ out/
 vcpkg_installed/
 vcpkg-downloads/
 vcpkg-packages/
+.vcpkg-root
 
 # Compiled Object / Library Files
 *.o
@@ -27,6 +32,21 @@ vcpkg-packages/
 *.so
 *.dll
 *.exe
+*.pdb
+*.exp
+
+# Python & Blender
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.blend1
+*.blend@
+
+# Generated Source Code
+schemas/generated/
+schema/generated/
 
 # OS Generated Files
 .DS_Store

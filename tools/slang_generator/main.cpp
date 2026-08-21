@@ -10,7 +10,7 @@
 #include <iostream>
 #include <string>
 
-#include "generator_core.hpp"
+#include "generator_core.h"
 
 int main(int argc, char** argv) {
 
@@ -73,3 +73,4 @@ int main(int argc, char** argv) {
     std::cout << "[Success] Generated reflection header: " << outputPath << "\n";
     return 0;
 }
+
