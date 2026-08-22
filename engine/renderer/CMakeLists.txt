@@ -50,6 +50,7 @@ add_library(vanguard_renderer STATIC
         scene/gltf_loader.h
         vk_backend/buffers/vulkan_buffer_utils.h
         vk_backend/buffers/vulkan_buffer_utils.cpp
+        scene/camera.cpp
 )
 
 target_include_directories(vanguard_renderer PUBLIC

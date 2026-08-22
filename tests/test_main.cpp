@@ -84,6 +84,7 @@ int main() {
         // 2. カメラの初期設定
         // ==========================================
         vanguard::scene::CameraData camera{};
+        vanguard::scene::MouseTracker mouse_tracker{};
 
         // ==========================================
         // 3. メインループ
@@ -92,6 +93,11 @@ int main() {
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+
+            auto input_state = vanguard::scene::poll_input(window, mouse_tracker);
+
+            float delta_time = 0.016f; // 仮のデルタタイム（後でタイマーを作ります）
+            camera = vanguard::scene::update_camera(camera, input_state, delta_time);
 
            RenderSnapshot snapshot{};
             snapshot.frame_number = frame_count++;
