@@ -10,6 +10,7 @@ vcpkg_installed/** linguist-generated=true
 cmake-build-*/ linguist-generated=true
 third_party/** linguist-vendored=true
 schemas/generated/** linguist-generated=true
+include/ext/** linguist-vendored=true
 
 # --- Default Behavior ---
 * text=auto
