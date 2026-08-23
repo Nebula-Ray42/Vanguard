@@ -1,7 +1,7 @@
 # --- Language Overrides ---
 *.h linguist-language=C
 *.hpp linguist-language=C++
-*.slang linguist-language=HLSL
+*.slang linguist-language=Slang
 *.sh linguist-language=Shell
 *.py linguist-language=Python
 
