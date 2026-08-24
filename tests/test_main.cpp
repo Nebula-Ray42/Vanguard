@@ -69,9 +69,6 @@ int main() {
         auto renderer = std::move(renderer_expected.value());
         std::cout << "VulkanRenderer の初期化に成功しました\n";
 
-        // ==========================================
-        // 1. データの準備 (床の作成とGPU登録)
-        // ==========================================
         auto floor_data = vanguard::scene::create_ground_grid(10.0f, 1.0f, 0);
         auto mesh_opt = renderer.create_mesh_from_data(floor_data);
         if (!mesh_opt) {
@@ -80,15 +77,9 @@ int main() {
         }
         auto floor_mesh_id = *mesh_opt;
 
-        // ==========================================
-        // 2. カメラの初期設定
-        // ==========================================
         vanguard::scene::CameraData camera{};
         vanguard::scene::MouseTracker mouse_tracker{};
 
-        // ==========================================
-        // 3. メインループ
-        // ==========================================
         uint64_t frame_count = 0;
 
         while (!glfwWindowShouldClose(window)) {
@@ -96,7 +87,7 @@ int main() {
 
             auto input_state = vanguard::scene::poll_input(window, mouse_tracker);
 
-            float delta_time = 0.016f; // 仮のデルタタイム（後でタイマーを作ります）
+            float delta_time = 0.016f; // TODO 仮のデルタタイム（後でタイマーを作ります）
             camera = vanguard::scene::update_camera(camera, input_state, delta_time);
 
            RenderSnapshot snapshot{};
