@@ -1,5 +1,5 @@
 # --- Language Overrides ---
-*.h linguist-language=C
+*.h linguist-language=C++
 *.hpp linguist-language=C++
 *.slang linguist-language=Slang
 *.sh linguist-language=Shell
