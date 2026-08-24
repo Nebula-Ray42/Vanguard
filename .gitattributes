@@ -1,0 +1,58 @@
+# --- Language Overrides ---
+*.h linguist-language=C
+*.hpp linguist-language=C++
+*.slang linguist-language=Slang
+*.sh linguist-language=Shell
+*.py linguist-language=Python
+
+# --- Generated Files (Hide from GitHub language statistics) ---
+vcpkg_installed/** linguist-generated=true
+cmake-build-*/ linguist-generated=true
+third_party/** linguist-vendored=true
+schemas/generated/** linguist-generated=true
+include/ext/** linguist-vendored=true
+
+# --- Default Behavior ---
+* text=auto
+
+# --- Text Files (Force LF for cross-platform CI consistency) ---
+# C/C++
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.h text eol=lf
+*.c text eol=lf
+*.cc text eol=lf
+*.cxx text eol=lf
+
+# Shaders
+*.slang text eol=lf
+
+# Python & Scripts
+*.py text eol=lf
+*.sh text eol=lf
+
+# FlatBuffers Schema
+*.fbs text eol=lf
+
+# Config, Build & Docs
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# --- Binary Files ---
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.fbx binary
+*.gltf binary
+*.glb binary
+*.spv binary
+*.bin binary
