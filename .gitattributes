@@ -12,6 +12,14 @@ third_party/** linguist-vendored=true
 schemas/generated/** linguist-generated=true
 include/ext/** linguist-vendored=true
 
+include/vulkan/** linguist-documentation
+vulkan.h linguist-documentation
+miniaudio.h linguist-documentation
+
+*.sh linguist-vendored=false
+*.py linguist-vendored=false
+*.slang linguist-vendored=false
+
 # --- Default Behavior ---
 * text=auto
 
