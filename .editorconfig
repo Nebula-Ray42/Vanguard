@@ -1,23 +1,33 @@
 # top-most EditorConfig file
 root = true
 
-# すべてのファイルに適用される基本ルール
 [*]
 charset = utf-8
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
+
+[*.{c,cpp,h,hpp}]
 indent_size = 4
 
-# JSON, TOML, YAMLなどの設定ファイル
-[*.{json,toml,yml,yaml}]
-indent_size = 2
-
-# Slangシェーダー言語用
 [*.slang]
 indent_size = 4
 
-# マークダウンは行末の空白を許容する
+[*.py]
+indent_size = 4
+
+[*.fbs]
+indent_size = 4
+
+[CMakeLists.txt, *.cmake]
+indent_size = 4
+
+[*.sh]
+indent_size = 2
+
+[*.{json,toml,yml,yaml}]
+indent_size = 2
+
 [*.md]
 trim_trailing_whitespace = false
