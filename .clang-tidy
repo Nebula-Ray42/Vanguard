@@ -15,24 +15,6 @@ Checks: >
     -google-readability-todo,
     -readability-identifier-length
 
-# 無効化した項目の理由:
-# - avoid-magic-numbers / magic-numbers:
-#     Vulkanの定数(VK_SUBPASS_EXTERNAL, サイズ計算等)を毎回名前付き定数に
-#     強制すると却ってノイズになるため無効化。意味のある値は第1章のUPPER_SNAKE_CASE定数にする。
-# - non-private-member-variables-in-classes (両方):
-#     第2章「structの全メンバpublic」が前提のため、非private指摘は不要。
-# - special-member-functions:
-#     Vulkanハンドルはコンストラクタ/デストラクタで暗黙管理せず、
-#     destroy()を明示呼び出しする方針(第3章)のため、Rule of 5の強制は不要。
-# - owning-memory:
-#     GSL(gsl::owner<T*>)への依存を新たに増やすことになり、
-#     第8章の「不要な依存を増やさない」方針と衝突するため無効化。
-# - use-trailing-return-type:
-#     ガイドラインが明示的に要求していないスタイル選択のため強制しない。
-# - readability-identifier-length:
-#     座標(x, y)やループインデックス等、低レイヤーでは短い名前が
-#     慣用的でありノイズになるため無効化。
-
 WarningsAsErrors: >
     modernize-use-nodiscard,
     bugprone-use-after-move,
