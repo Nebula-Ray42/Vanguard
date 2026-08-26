@@ -11,8 +11,8 @@ namespace vanguard::scene {
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) state.move_z -= 1.0f; // 後退
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) state.move_x -= 1.0f; // 左
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) state.move_x += 1.0f; // 右
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) state.move_y += 1.0f; // 上昇
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) state.move_y -= 1.0f; // 下降
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) state.move_y += 1.0f; // 上昇
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) state.move_y -= 1.0f; // 下降
 
     // マウス入力の集計
     double current_x, current_y;
