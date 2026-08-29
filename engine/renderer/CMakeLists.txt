@@ -51,6 +51,12 @@ add_library(vanguard_renderer STATIC
         vk_backend/buffers/vulkan_buffer_utils.h
         vk_backend/buffers/vulkan_buffer_utils.cpp
         scene/camera.cpp
+        vk_backend/frame_graph/render_graph_types.h
+        vk_backend/frame_graph/graph_compiler.h
+        vk_backend/frame_graph/graph_compiler.cpp
+        vk_backend/frame_graph/graph_executor.h
+        vk_backend/frame_graph/graph_executor.cpp
+        vk_backend/frame_graph/graph_builder.h
 )
 
 target_include_directories(vanguard_renderer PUBLIC
