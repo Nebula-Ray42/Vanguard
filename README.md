@@ -1,4 +1,9 @@
-# [Engine Name]
+# Vanta
+
+[![build](https://github.com/{owner}/{repo}/actions/workflows/ci.yml/badge.svg)](https://github.com/{owner}/{repo}/actions)
+[![license](https://img.shields.io/badge/license-BSD2--Patent-blue)](LICENSE)
+[![vcpkg](https://img.shields.io/badge/deps-vcpkg-lightgrey)](#)
+[![platform](https://img.shields.io/badge/platform-Win%2FMac%2FLinux-lightgrey)](#)
 
 > A brutal, high-performance, raw Vulkan (vulkan.hpp) toon rendering engine built with Slang and strict Data-Oriented Design.
 
@@ -70,4 +75,4 @@ Detailed architectural decisions, custom FlatBuffers schemas, struct memory padd
 
 Dual-licensed under either of:
 
-* BSD-2-Clause Plus Patent License ([LICENSE](https://github.com/Nebula-Ray42/Vanguard/blob/main/LICENSE))
+* BSD-2-Clause Plus Patent License ([LICENSE-BSD-Patent](https://github.com/Nebula-Ray42/Vanguard/blob/main/LICENSE-BSD-Patent))
