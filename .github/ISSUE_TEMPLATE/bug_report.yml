@@ -33,7 +33,7 @@ body:
     id: pipeline
     attributes:
       label: Vulkan Driver / SDK Version
-      placeholder: e.g., v1.3.268
+      placeholder: e.g., v1.4
     validations:
       required: true
   - type: textarea
