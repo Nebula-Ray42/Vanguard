@@ -10,7 +10,7 @@
 #include <expected>
 #include <string>
 
-#include "../../include/ext/vk_mem_alloc.h"
+#include "ext/vk_mem_alloc.h"
 
 // バッファとそのメモリ割り当て情報をセットで管理する構造体
 struct AllocatedBuffer {

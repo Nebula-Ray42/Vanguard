@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent   //
 //------------------------------------------------//
 
-#include "../../include/ext/vk_mem_alloc.h"
-#include "../core/vulkan_context.h"
+
 
 #include "engine_error.h"
+#include "ext/vk_mem_alloc.h"
+#include "vulkan/core/vulkan_context.h"
 
 namespace vanguard::render {
     struct VulkanContext;

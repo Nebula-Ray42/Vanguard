@@ -8,7 +8,7 @@
 
 #include <expected>
 
-#include "../../assets/image_loader.hpp"
+#include "assets/image_loader.hpp"
 
 namespace rey::vulkan {
 

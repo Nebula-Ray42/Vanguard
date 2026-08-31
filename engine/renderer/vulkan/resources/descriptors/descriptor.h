@@ -6,14 +6,11 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-
+#include <glm/glm.hpp>
 #include <expected>
 
-#include "../core/vulkan_context.h"
-
 #include "include/engine_error.h"
-
-#include <glm/glm.hpp>
+#include "vulkan/core/vulkan_context.h"
 
 namespace vanguard::render {
 

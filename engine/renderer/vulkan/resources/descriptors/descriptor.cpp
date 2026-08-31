@@ -5,7 +5,7 @@
 
 #include "descriptor.h"
 
-#include "vk_backend/core/vulkan_context.h"
+#include "vulkan/core/vulkan_context.h"
 
 namespace vanguard::render {
 

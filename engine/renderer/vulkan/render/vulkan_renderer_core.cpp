@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "scene/gltf_loader.h"
-#include "vk_backend/buffers/buffer.h"
+#include "vulkan/resources/buffers/buffer.h"
 #include "vulkan_renderer.h"
 
 namespace vanguard::render {

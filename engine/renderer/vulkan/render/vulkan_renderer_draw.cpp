@@ -5,7 +5,7 @@
 
 #include <array>
 
-#include "vk_backend/buffers/buffer.h"
+#include "vulkan/resources/buffers/buffer.h"
 #include "vulkan_renderer.h"
 
 namespace vanguard::render {

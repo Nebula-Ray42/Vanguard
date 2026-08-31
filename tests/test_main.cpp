@@ -15,7 +15,7 @@
 #include "include/render_types.h"
 #include "scene/camera.h"
 #include "scene/mesh.h"
-#include "vk_backend/render/vulkan_renderer.h"
+#include "vulkan/render/vulkan_renderer.h"
 
 #include <glm/glm.hpp>
 
@@ -46,7 +46,7 @@ int main() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    GLFWwindow* window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Vanguard - Vulkan Test", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Vanta - Vulkan Test", nullptr, nullptr);
     if (window == nullptr) {
         std::cerr << "ウィンドウの作成に失敗しました\n";
         glfwTerminate();

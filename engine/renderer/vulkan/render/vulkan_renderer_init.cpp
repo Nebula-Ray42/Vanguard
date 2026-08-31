@@ -8,9 +8,9 @@
 #include <utility>
 
 #include "assets/image_loader.hpp"
-#include "vk_backend/buffers/buffer.h"
-#include "vk_backend/descriptors/descriptor.h"
-#include "vk_backend/images/texture.h"
+#include "vulkan/resources/buffers/buffer.h"
+#include "vulkan/resources/descriptors/descriptor.h"
+#include "vulkan/resources/images/texture.h"
 #include "vulkan_renderer.h"
 
 namespace vanguard::render {
