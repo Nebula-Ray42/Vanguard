@@ -3,7 +3,7 @@
 [![build](https://github.com/Nebula-Ray42/Vanta/actions/workflows/build-linux.yml/badge.svg)](https://github.com/Nebula-Ray42/Vanta/actions)
 [![build](https://github.com/Nebula-Ray42/Vanta/actions/workflows/build-macos.yml/badge.svg)](https://github.com/Nebula-Ray42/Vanta/actions)
 [![build](https://github.com/Nebula-Ray42/Vanta/actions/workflows/build-windows.yml/badge.svg)](https://github.com/Nebula-Ray42/Vanta/actions)
-[![license](https://img.shields.io/badge/license-BSD2--Patent-blue)](LICENSE)
+[![license](https://img.shields.io/badge/license-BSD2--Patent-blue)](LICENSE-BSD-Patent)
 [![vcpkg](https://img.shields.io/badge/deps-vcpkg-lightgrey)](#)
 [![platform](https://img.shields.io/badge/platform-Win%2FMac%2FLinux-lightgrey)](#)
 
