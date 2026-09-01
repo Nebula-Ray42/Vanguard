@@ -2,51 +2,42 @@ Language: Cpp
 BasedOnStyle: Google
 Standard: Latest
 
-# --- 基本レイアウト ---
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ColumnLimit: 120
 AccessModifierOffset: -4
 
-# --- ポインタ/参照の位置 ---
 PointerAlignment: Left
 ReferenceAlignment: Left
 DerivePointerAlignment: false
 
-# --- 波括弧 ---
 BreakBeforeBraces: Attach
 Cpp11BracedListStyle: true
 SpaceBeforeCpp11BracedList: false
 
-# --- ガード節(第4章: Early Return)の一行ifを許可 ---
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortLoopsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortLambdasOnASingleLine: Inline
 
-# --- SoA構造体の可読性(第2章) ---
 AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveAssignments: Consecutive
 AlignTrailingComments: true
 
-# --- テンプレート/Concept(第2章, 第5章) ---
 AlwaysBreakTemplateDeclarations: Yes
 SpaceAfterTemplateKeyword: true
 
-# --- 関数呼び出し引数 ---
 BinPackArguments: false
 BinPackParameters: false
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowAllArgumentsOnNextLine: true
 
-# --- 名前空間　---
 NamespaceIndentation: None
 CompactNamespaces: false
 FixNamespaceComments: true
 
-# --- #include の整理 ---
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeCategories:
@@ -63,7 +54,6 @@ IncludeCategories:
       Priority:        4
       SortPriority:    4
 
-# --- その他 ---
 IndentCaseLabels: true
 ReflowComments: true
 KeepEmptyLinesAtTheStartOfBlocks: false
