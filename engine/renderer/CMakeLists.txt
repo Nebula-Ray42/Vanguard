@@ -4,7 +4,7 @@ find_package(glm CONFIG REQUIRED)
 find_package(flatbuffers CONFIG REQUIRED)
 find_package(fastgltf CONFIG REQUIRED)
 
-add_library(vanguard_renderer STATIC
+add_library(vanta_renderer STATIC
         vulkan/renderer_vulkan.cpp
         include/rey_renderer.h
         include/generated/render_command_generated.h
@@ -60,18 +60,18 @@ add_library(vanguard_renderer STATIC
         vulkan/frame_graph/graph_builder.cpp
 )
 
-target_include_directories(vanguard_renderer PUBLIC
+target_include_directories(vanta_renderer PUBLIC
         .
         include
 )
 
-add_dependencies(vanguard_renderer generate_shaders)
+add_dependencies(vanta_renderer generate_shaders)
 
-target_link_libraries(vanguard_renderer PRIVATE
+target_link_libraries(vanta_renderer PRIVATE
         Vulkan::Vulkan
 )
 
-target_link_libraries(vanguard_renderer PUBLIC
+target_link_libraries(vanta_renderer PUBLIC
         Vulkan::Vulkan
         glfw
         glm::glm
@@ -79,7 +79,7 @@ target_link_libraries(vanguard_renderer PUBLIC
         fastgltf::fastgltf
 )
 
-target_precompile_headers(vanguard_renderer PRIVATE
+target_precompile_headers(vanta_renderer PRIVATE
         <vulkan/vulkan.h>
         <expected>
         <vector>
@@ -92,7 +92,7 @@ target_precompile_headers(vanguard_renderer PRIVATE
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(vanguard_renderer PRIVATE
+    target_compile_options(vanta_renderer PRIVATE
             -Wall -Wextra -Wpedantic
             -Wconversion
             -Wshadow

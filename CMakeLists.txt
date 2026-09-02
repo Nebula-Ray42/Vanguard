@@ -40,7 +40,7 @@ add_custom_command(
         DEPENDS rey_slang_generator ${SLANG_SOURCES}
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:vanguard_engine_tests>/assets"
+        "$<TARGET_FILE_DIR:vanta_engine_tests>/assets"
         COMMENT "Copying assets directory to test output directory..."
 )
 

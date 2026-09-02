@@ -20,6 +20,6 @@ add_custom_target(generate_schemas ALL
         DEPENDS "${SCHEMA_GENERATED_DIR}/render_command_generated.h"
 )
 
-add_library(vanguard_schemas INTERFACE)
-target_include_directories(vanguard_schemas INTERFACE "${SCHEMA_GENERATED_DIR}")
-add_dependencies(vanguard_schemas generate_schemas)
+add_library(vanta_schemas INTERFACE)
+target_include_directories(vanta_schemas INTERFACE "${SCHEMA_GENERATED_DIR}")
+add_dependencies(vanta_schemas generate_schemas)
