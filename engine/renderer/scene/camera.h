@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
-namespace vanguard::scene {
+namespace vanta::scene {
 
     struct CameraData {
         glm::vec3 position{0.0f, 5.0f, 10.0f};

@@ -10,7 +10,7 @@
 
 #include "engine_error.h"
 
-namespace vanguard::render::fg {
+namespace vanta::render::fg {
 
 struct ImageHandle { uint32_t id; };
 struct BufferHandle { uint32_t id; };
@@ -142,4 +142,4 @@ struct PostProcessData {
     float bloom_intensity = 0.5f; // 溢れる光の強さ
 };
 
-} // namespace vanguard::render::fg
+}  // namespace vanta::render::fg

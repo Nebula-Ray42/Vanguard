@@ -24,7 +24,7 @@ namespace {
 constexpr uint32_t kWindowWidth = 800;
 constexpr uint32_t kWindowHeight = 600;
 
-std::string describe_error(const vanguard::render::EngineError& error) {
+std::string describe_error(const vanta::render::EngineError& error) {
     return std::visit([]<typename T0>(const T0& err) -> std::string {
         using T = std::decay_t<T0>;
         if constexpr (requires { err.message; }) {
@@ -56,7 +56,7 @@ int main() {
     std::cout << "ウィンドウを作成しました。VulkanRenderer を初期化します...\n";
 
     try {
-        auto renderer_expected = vanguard::render::VulkanRenderer::create(
+        auto renderer_expected = vanta::render::VulkanRenderer::create(
             "Rey Engine Test",
             window,
             kWindowWidth,
@@ -69,7 +69,7 @@ int main() {
         auto renderer = std::move(renderer_expected.value());
         std::cout << "VulkanRenderer の初期化に成功しました\n";
 
-        auto floor_data = vanguard::scene::create_ground_grid(10.0f, 1.0f, 0);
+        auto floor_data = vanta::scene::create_ground_grid(10.0f, 1.0f, 0);
         auto mesh_opt = renderer.create_mesh_from_data(floor_data);
         if (!mesh_opt) {
             std::cerr << "メッシュのGPU登録に失敗しました\n";
@@ -77,24 +77,24 @@ int main() {
         }
         auto floor_mesh_id = *mesh_opt;
 
-        vanguard::scene::CameraData camera{};
-        vanguard::scene::MouseTracker mouse_tracker{};
+        vanta::scene::CameraData camera{};
+        vanta::scene::MouseTracker mouse_tracker{};
 
         uint64_t frame_count = 0;
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
-            auto input_state = vanguard::scene::poll_input(window, mouse_tracker);
+            auto input_state = vanta::scene::poll_input(window, mouse_tracker);
 
             float delta_time = 0.016f; // TODO 仮のデルタタイム（後でタイマーを作ります）
-            camera = vanguard::scene::update_camera(camera, input_state, delta_time);
+            camera = vanta::scene::update_camera(camera, input_state, delta_time);
 
            RenderSnapshot snapshot{};
             snapshot.frame_number = frame_count++;
 
-            snapshot.view_matrix = vanguard::scene::compute_projection_matrix(camera) *
-                                   vanguard::scene::compute_view_matrix(camera);
+            snapshot.view_matrix = vanta::scene::compute_projection_matrix(camera) *
+                                   vanta::scene::compute_view_matrix(camera);
 
             // 床のインスタンス情報を追加
             RenderInstance floor_instance{};

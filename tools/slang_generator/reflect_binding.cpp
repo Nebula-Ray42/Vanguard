@@ -10,7 +10,7 @@
 
 #include "generator_core.h"
 
-namespace vanguard::slang_generator {
+namespace vanta::slang_generator {
 
     std::expected<ResourceBindingsSoA, std::string> extract_resource_bindings(slang::ShaderReflection* reflection) {
         if (reflection == nullptr) {

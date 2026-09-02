@@ -15,7 +15,7 @@
 
 #include "../core/vulkan_context.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 class CommandRecorder {
     public:

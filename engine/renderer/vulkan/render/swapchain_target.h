@@ -15,7 +15,7 @@
 
 #include "engine_error.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
     struct SwapchainTarget {
         VkSwapchainKHR swapchain{VK_NULL_HANDLE};

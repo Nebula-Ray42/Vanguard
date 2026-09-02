@@ -11,7 +11,7 @@
 
 #include "slang.h"
 
-namespace vanguard::slang_generator {
+namespace vanta::slang_generator {
     struct ResourceBindingsSoA;
 
     // ==========================================

@@ -13,7 +13,7 @@
 
 #include "engine_error.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
     [[nodiscard]] std::expected<void, EngineError> copy_buffer(
         const VulkanContext& context,

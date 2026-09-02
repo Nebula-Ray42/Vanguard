@@ -8,7 +8,7 @@
 #include "vulkan/resources/buffers/buffer.h"
 #include "vulkan_renderer.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 GlobalUbo VulkanRenderer::build_global_ubo(const RenderSnapshot& snapshot) {
     return GlobalUbo{

@@ -9,7 +9,7 @@
 #include "ext/vk_mem_alloc.h"
 #include "vulkan/core/vulkan_context.h"
 
-namespace vanguard::render {
+namespace vanta::render {
     struct VulkanContext;
     struct GpuBuffer;
 

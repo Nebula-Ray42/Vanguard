@@ -12,7 +12,7 @@
 #include "include/engine_error.h"
 #include "vulkan/core/vulkan_context.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
     struct alignas(16) GlobalUbo {
         glm::mat4 view_proj;

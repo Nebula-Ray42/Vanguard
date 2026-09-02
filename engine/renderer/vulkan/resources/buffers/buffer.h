@@ -15,7 +15,7 @@
 #include "vulkan/core/vulkan_context.h"
 #include "include/engine_error.h"
 
-namespace vanguard::render {
+namespace vanta::render {
     struct GpuBuffer;
     struct VulkanContext;
 

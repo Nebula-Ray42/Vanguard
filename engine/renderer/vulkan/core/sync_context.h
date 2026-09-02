@@ -12,7 +12,7 @@
 
 #include "engine_error.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
 

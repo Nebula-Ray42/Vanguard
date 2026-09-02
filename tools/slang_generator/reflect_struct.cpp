@@ -11,7 +11,7 @@
 
 #include "generator_core.h"
 
-namespace vanguard::slang_generator {
+namespace vanta::slang_generator {
 
     // TODO 将来的には std::string ではなく EngineError 構造体への移行
     using ExtractResult = std::expected<ShaderStruct, std::string>;

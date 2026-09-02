@@ -10,7 +10,7 @@
 #include "vulkan/resources/buffers/buffer.h"
 #include "vulkan_renderer.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 VulkanRenderer::VulkanRenderer(VulkanRenderer&& other) noexcept {
     *this = std::move(other);
@@ -148,8 +148,8 @@ std::expected<VulkanRenderer, EngineError> VulkanRenderer::create(
     return renderer;
 }
 
-    std::expected<void, std::string> vanguard::render::VulkanRenderer::load_scene(const std::string& filepath) {
-    auto scene_result = vanguard::scene::load_gltf(filepath);
+    std::expected<void, std::string> vanta::render::VulkanRenderer::load_scene(const std::string& filepath) {
+    auto scene_result = vanta::scene::load_gltf(filepath);
     if (!scene_result.has_value()) {
         return std::unexpected("glTF load failed: " + std::to_string(std::to_underlying(scene_result.error())));
     }

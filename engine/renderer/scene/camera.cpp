@@ -1,7 +1,7 @@
 #include <GLFW/glfw3.h>
 #include "scene/camera.h"
 
-namespace vanguard::scene {
+namespace vanta::scene {
 
 [[nodiscard]] scene::InputState poll_input(GLFWwindow* window, MouseTracker& tracker) noexcept {
     scene::InputState state{};

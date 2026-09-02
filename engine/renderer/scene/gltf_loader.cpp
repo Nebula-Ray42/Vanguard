@@ -10,7 +10,7 @@
 #include <fastgltf/tools.hpp>
 #include <fastgltf/types.hpp>
 
-namespace vanguard::scene {
+namespace vanta::scene {
 
 constexpr const char* get_mime_type_string(fastgltf::MimeType mime) {
     switch (mime) {

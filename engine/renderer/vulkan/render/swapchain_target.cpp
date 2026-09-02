@@ -14,7 +14,7 @@
 
 #include "engine_error.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 namespace {
 

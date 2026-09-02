@@ -2,7 +2,7 @@
 #include "engine_error.h"
 #include <unordered_map>
 
-namespace vanguard::render::fg {
+namespace vanta::render::fg {
 
 inline void translate_usage_to_vulkan(
     UsageType usage,

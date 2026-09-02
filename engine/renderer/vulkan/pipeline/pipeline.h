@@ -13,7 +13,7 @@
 
 #include "engine_error.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 struct PushConstants {
     float model[16];

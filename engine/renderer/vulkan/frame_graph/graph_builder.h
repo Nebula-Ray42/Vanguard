@@ -4,7 +4,7 @@
 #include <utility>
 #include "render_graph_types.h"
 
-namespace vanguard::render::fg {
+namespace vanta::render::fg {
 
 class PassBuilder {
 public:

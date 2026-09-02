@@ -11,7 +11,7 @@
 #define VMA_IMPLEMENTATION
 #include "../../include/ext/glfw3.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 [[nodiscard]] std::expected<VulkanContext, EngineError> create_vulkan_context(
     const char* app_name,

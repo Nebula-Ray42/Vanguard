@@ -10,7 +10,7 @@
 #include <variant>
 #include <format>
 
-namespace vanguard::render {
+namespace vanta::render {
 
 // TODO 後ほど render_pass_error.h などに分割するまでの「一時的な避難所」
 struct RenderPassError {

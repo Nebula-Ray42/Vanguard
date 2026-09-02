@@ -9,7 +9,7 @@
 
 #include "generator_core.h"
 
-namespace vanguard::slang_generator {
+namespace vanta::slang_generator {
 
     std::expected<std::string, std::string> generate_cpp_bindings(const ResourceBindingsSoA& soa_data) {
         if (soa_data.names.empty()) {

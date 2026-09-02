@@ -13,7 +13,7 @@
 #include "vulkan/resources/images/texture.h"
 #include "vulkan_renderer.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
     namespace {
         void update_bindless_texture(

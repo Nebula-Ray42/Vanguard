@@ -5,7 +5,7 @@
 
 #include "command_utils.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
     std::expected<void, EngineError> copy_buffer(
         const VulkanContext& context,

@@ -49,13 +49,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    auto extracted_result = vanguard::slang_generator::extract_resource_bindings(reflection);
+    auto extracted_result = vanta::slang_generator::extract_resource_bindings(reflection);
     if (!extracted_result.has_value()) {
         std::cerr << "[Error] Extraction Failed: " << extracted_result.error() << "\n";
         return 1;
     }
 
-    auto generated_result = vanguard::slang_generator::generate_cpp_bindings(extracted_result.value());
+    auto generated_result = vanta::slang_generator::generate_cpp_bindings(extracted_result.value());
     if (!generated_result.has_value()) {
         std::cerr << "[Error] Generation Failed: " << generated_result.error() << "\n";
         return 1;

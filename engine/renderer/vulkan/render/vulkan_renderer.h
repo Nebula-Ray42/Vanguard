@@ -20,7 +20,7 @@
 #include "vulkan/pipeline/pipeline.h"
 #include "vulkan//render/swapchain_target.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
     struct ActiveFrame {
         CommandRecorder recorder;

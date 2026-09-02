@@ -7,7 +7,7 @@
 
 #include "vulkan/core/vulkan_context.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
     std::expected<VkDescriptorSetLayout, EngineError> create_global_ubo_layout(VkDevice device) {
         constexpr VkDescriptorSetLayoutBinding ubo_layout_binding{

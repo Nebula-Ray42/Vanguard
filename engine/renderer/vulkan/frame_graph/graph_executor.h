@@ -5,7 +5,7 @@
 #include "render_graph_types.h"
 #include "engine_error.h"
 
-namespace vanguard::render::fg {
+namespace vanta::render::fg {
 
 struct ExecutionContext {
     VkCommandBuffer cmd_buffer;
@@ -17,4 +17,4 @@ struct ExecutionContext {
     const ExecutionContext& context
 ) noexcept;
 
-} // namespace vanguard::render::fg
+}  // namespace vanta::render::fg

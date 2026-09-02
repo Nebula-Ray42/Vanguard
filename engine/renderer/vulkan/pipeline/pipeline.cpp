@@ -7,7 +7,7 @@
 
 #include <fstream>
 
-namespace vanguard::render {
+namespace vanta::render {
 
 namespace {
     [[nodiscard]] std::expected<std::vector<char>, EngineError> read_file(const std::string& filename) noexcept {

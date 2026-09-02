@@ -13,7 +13,7 @@
 #include <cstddef>
 #include <glm/glm.hpp>
 
-namespace vanguard::scene {
+namespace vanta::scene {
 
     enum class GltfLoadError {
         FileNotFound,

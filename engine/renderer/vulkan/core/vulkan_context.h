@@ -14,7 +14,7 @@
 
 #include "include/engine_error.h"
 
-namespace vanguard::render {
+namespace vanta::render {
 
 struct GpuBuffer {
     VkBuffer buffer{VK_NULL_HANDLE};
