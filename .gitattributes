@@ -4,6 +4,7 @@
 *.slang linguist-language=Slang
 *.sh linguist-language=Shell
 *.py linguist-language=Python
+*.custom_ext   linguist-language=CMake
 
 # --- Generated Files (Hide from GitHub language statistics) ---
 vcpkg_installed/** linguist-generated=true
